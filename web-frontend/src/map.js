@@ -1,6 +1,8 @@
 let map;
 let vectorSource;
 let vectorLayer;
+let gpsActive = false;
+let watchId = null;
 
 function createBaseLayers() {
     const osmLayer = new ol.layer.Tile({
@@ -74,84 +76,14 @@ function initMap() {
         ]
     });
 
-    // Add geolocation control
-    const geolocation = new ol.Geolocation({
-        trackingOptions: {
-            enableHighAccuracy: true
-        },
-        projection: map.getView().getProjection()
-    });
-
-    // Create a GPS button
-    const gpsButton = document.createElement('button');
-    gpsButton.innerHTML = '📍';
-    gpsButton.className = 'gps-button ol-unselectable ol-control';
-    gpsButton.title = 'Show my location';
-
-    const gpsElement = document.createElement('div');
-    gpsElement.className = 'ol-gps ol-unselectable ol-control';
-    gpsElement.appendChild(gpsButton);
-
-    map.addControl(new ol.control.Control({
-        element: gpsElement
-    }));
-
-    // Create a vector layer for the location marker
-    const locationLayer = new ol.layer.Vector({
-        source: new ol.source.Vector()
-    });
-    map.addLayer(locationLayer);
-
-    // Handle GPS button click
-    let isTracking = false;
-    const positionFeature = new ol.Feature();
-    positionFeature.setStyle(new ol.style.Style({
-        image: new ol.style.Circle({
-            radius: 8,
-            fill: new ol.style.Fill({ color: '#3399CC' }),
-            stroke: new ol.style.Stroke({ color: '#fff', width: 2 })
-        })
-    }));
-
-    const accuracyFeature = new ol.Feature();
-    locationLayer.getSource().addFeatures([accuracyFeature, positionFeature]);
-
-    gpsButton.addEventListener('click', function() {
-        if (!isTracking) {
-            geolocation.setTracking(true);
-            gpsButton.classList.add('active');
+    // Add GPS button functionality
+    const gpsButton = document.getElementById('gps-button');
+    gpsButton.addEventListener('click', () => {
+        if (!gpsActive) {
+            startGPSTracking();
         } else {
-            geolocation.setTracking(false);
-            gpsButton.classList.remove('active');
-            positionFeature.setGeometry(undefined);
-            accuracyFeature.setGeometry(undefined);
+            stopGPSTracking();
         }
-        isTracking = !isTracking;
-    });
-
-    // Handle geolocation events
-    geolocation.on('change:position', function() {
-        const coordinates = geolocation.getPosition();
-        positionFeature.setGeometry(coordinates ? new ol.geom.Point(coordinates) : null);
-        if (coordinates) {
-            map.getView().animate({
-                center: coordinates,
-                zoom: 15,
-                duration: 1000
-            });
-        }
-    });
-
-    geolocation.on('change:accuracyGeometry', function() {
-        accuracyFeature.setGeometry(geolocation.getAccuracyGeometry());
-    });
-
-    // Handle geolocation errors
-    geolocation.on('error', function(error) {
-        console.error('Geolocation error:', error);
-        alert('Error getting your location. Please make sure location services are enabled.');
-        isTracking = false;
-        gpsButton.classList.remove('active');
     });
 
     // Add layer switcher control
@@ -185,6 +117,119 @@ function initMap() {
     map.on('click', handleMapClick);
 }
 
+function startGPSTracking() {
+    const gpsButton = document.getElementById('gps-button');
+    if ('geolocation' in navigator) {
+        gpsButton.classList.add('active');
+        gpsActive = true;
+
+        // First get a quick position fix
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                updatePosition(position);
+                // Then start watching with higher accuracy
+                startWatchingPosition();
+            },
+            (error) => {
+                handleLocationError(error);
+            },
+            {
+                enableHighAccuracy: false, // Start with lower accuracy for faster first fix
+                timeout: 10000,
+                maximumAge: 30000 // Allow cached positions up to 30 seconds old
+            }
+        );
+    } else {
+        alert('Geolocation is not supported by your browser');
+    }
+}
+
+function startWatchingPosition() {
+    watchId = navigator.geolocation.watchPosition(
+        (position) => {
+            updatePosition(position);
+        },
+        (error) => {
+            handleLocationError(error);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 20000, // Increased timeout
+            maximumAge: 0
+        }
+    );
+}
+
+function updatePosition(position) {
+    const coords = [position.coords.longitude, position.coords.latitude];
+    
+    // Clear existing location marker
+    vectorSource.clear();
+    
+    // Add new marker at current position
+    const locationFeature = new ol.Feature({
+        geometry: new ol.geom.Point(
+            ol.proj.fromLonLat(coords)
+        )
+    });
+
+    // Style for the location marker
+    locationFeature.setStyle(new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: 8,
+            fill: new ol.style.Fill({
+                color: '#4285F4'
+            }),
+            stroke: new ol.style.Stroke({
+                color: 'white',
+                width: 2
+            })
+        })
+    }));
+
+    vectorSource.addFeature(locationFeature);
+    
+    // Center map on location
+    map.getView().animate({
+        center: ol.proj.fromLonLat(coords),
+        duration: 500,
+        zoom: 15
+    });
+}
+
+function handleLocationError(error) {
+    console.error('Error getting location:', error);
+    let errorMessage = 'Unable to get your location. ';
+    
+    switch(error.code) {
+        case error.PERMISSION_DENIED:
+            errorMessage += 'Please allow location access in your browser settings.';
+            break;
+        case error.POSITION_UNAVAILABLE:
+            errorMessage += 'Location information is unavailable.';
+            break;
+        case error.TIMEOUT:
+            errorMessage += 'The request to get your location timed out. Please try again.';
+            break;
+        default:
+            errorMessage += 'Please check your GPS settings and try again.';
+    }
+    
+    stopGPSTracking();
+    alert(errorMessage);
+}
+
+function stopGPSTracking() {
+    const gpsButton = document.getElementById('gps-button');
+    gpsButton.classList.remove('active');
+    gpsActive = false;
+    if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+    }
+    vectorSource.clear();
+}
+
 async function handleMapClick(event) {
     const coords = ol.proj.transform(event.coordinate, 'EPSG:3857', 'EPSG:4326');
     const weatherInfo = document.getElementById('weather-data');
@@ -192,7 +237,7 @@ async function handleMapClick(event) {
 
     // Clear previous markers
     vectorSource.clear();
-
+    
     // Add new dot marker at exact click location
     const marker = new ol.Feature({
         geometry: new ol.geom.Point(event.coordinate)
