@@ -1,0 +1,11 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+httpx==0.25.1
+pydantic==2.4.2
+pydantic-settings==2.0.3
+python-dotenv==1.0.0
+openmeteo-requests==1.1.0
+requests-cache==1.1.0
+numpy==1.24.3
+pandas==2.0.3
+retry-requests==2.0.0 

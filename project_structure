@@ -1,0 +1,19 @@
+weather_app/
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   ├── config.py
+│   │   └── weather_service.py
+│   ├── requirements.txt
+│   └── Dockerfile
+├── web-frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   └── App.js
+│   └── package.json
+└── mobile-app/
+    ├── src/
+    │   ├── components/
+    │   └── App.js
+    └── package.json 
