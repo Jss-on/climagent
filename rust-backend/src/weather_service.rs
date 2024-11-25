@@ -1,7 +1,8 @@
-use crate::models::{OpenMeteoResponse, WeatherResponse, Location, CurrentWeather};
-use chrono::{DateTime, Utc};
+use crate::models::weather::{OpenMeteoResponse, WeatherResponse, Location, CurrentWeather};
+use chrono::Utc;
 use log::{error, info};
 use reqwest::Client;
+use serde_json;
 use std::error::Error;
 
 pub struct WeatherService {
@@ -21,35 +22,40 @@ impl WeatherService {
         info!("Getting current weather for coordinates: lat={}, lon={}", lat, lon);
 
         let url = format!(
-            "{}?latitude={}&longitude={}&current=temperature_2m,relative_humidity_2m,rain,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=Asia/Singapore",
+            "{}?latitude={}&longitude={}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=auto",
             self.base_url, lat, lon
         );
 
-        let response = self.client
+        info!("Requesting URL: {}", url);
+
+        let response_text = self.client
             .get(&url)
             .send()
             .await?
-            .json::<OpenMeteoResponse>()
+            .text()
             .await?;
 
-        let current_time = DateTime::parse_from_rfc3339(&response.current.time)
+        info!("Received response: {}", response_text);
+
+        let response: OpenMeteoResponse = serde_json::from_str(&response_text)
             .map_err(|e| {
-                error!("Error parsing time: {}", e);
+                error!("Failed to parse response: {}", e);
                 e
-            })?
-            .with_timezone(&Utc);
+            })?;
+
+        let current_time = Utc::now();
 
         Ok(WeatherResponse {
             location: Location {
                 latitude: response.latitude,
                 longitude: response.longitude,
-                elevation: response.elevation,
+                elevation: response.elevation.unwrap_or(0.0),
                 timezone: response.timezone,
             },
             current: CurrentWeather {
                 temperature: response.current.temperature_2m,
                 humidity: response.current.relative_humidity_2m,
-                rain: response.current.rain,
+                rain: response.current.precipitation,
                 wind_speed: response.current.wind_speed_10m,
                 wind_direction: response.current.wind_direction_10m,
                 wind_gusts: response.current.wind_gusts_10m,

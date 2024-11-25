@@ -18,17 +18,191 @@ body {
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     max-width: 300px;
-    z-index: 1000;
+    z-index: 1;
+    font-family: Arial, sans-serif;
+}
+
+.weather-info p {
+    margin: 8px 0;
+    color: #333;
+}
+
+.weather-info strong {
+    color: #000;
+}
+
+.weather-info hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 12px 0;
+}
+
+.weather-info:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
 .weather-info h3 {
     margin-top: 0;
     margin-bottom: 10px;
     color: #333;
+    cursor: move;
 }
 
 #weather-data {
     font-size: 14px;
     line-height: 1.5;
     color: #666;
+    cursor: default;
+}
+
+/* Draw controls */
+.draw-control {
+    top: 20px;
+    left: 20px;
+}
+
+.draw-controls {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.draw-controls select {
+    margin: 5px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.draw-controls select:hover {
+    border-color: #999;
+}
+
+/* Layer switcher custom styles */
+.ol-control.layer-switcher {
+    top: 20px;
+    right: 340px;
+    z-index: 2;
+}
+
+.layer-switcher.shown.ol-control {
+    background-color: white;
+}
+
+.layer-switcher.shown.ol-control:hover {
+    background-color: white;
+}
+
+.layer-switcher button {
+    background-color: white;
+    color: #666;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.layer-switcher button:hover {
+    background-color: #f5f5f5;
+}
+
+.layer-switcher.shown {
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.layer-switcher {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    padding: 4px;
+    z-index: 1000;
+    display: flex;
+    gap: 4px;
+}
+
+.layer-switcher button {
+    background: white;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    color: #666;
+    border-radius: 2px;
+    transition: all 0.2s;
+}
+
+.layer-switcher button:hover {
+    background: #f4f4f4;
+    color: #333;
+}
+
+.layer-switcher button.active {
+    background: #e6e6e6;
+    color: #000;
+    font-weight: 500;
+}
+
+/* OpenLayers controls styling */
+.ol-zoom {
+    top: auto;
+    bottom: 20px;
+    right: 20px;
+    left: auto;
+}
+
+.ol-zoom-in,
+.ol-zoom-out {
+    background-color: white !important;
+    color: #666 !important;
+}
+
+.ol-zoom-in:hover,
+.ol-zoom-out:hover {
+    background-color: #f4f4f4 !important;
+}
+
+.ol-scale-line {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 4px;
+    bottom: 8px;
+    left: 8px;
+    padding: 2px;
+}
+
+.ol-full-screen {
+    top: auto;
+    bottom: 95px;
+    right: 20px;
+    left: auto;
+}
+
+.ol-full-screen button {
+    background-color: white !important;
+}
+
+.ol-full-screen button:hover {
+    background-color: #f4f4f4 !important;
+}
+
+.ol-zoom-slider {
+    top: auto !important;
+    bottom: 60px !important;
+    right: 20px !important;
+    left: auto !important;
+    height: 150px !important;
+    background-color: white !important;
+    border-radius: 4px !important;
+}
+
+.ol-zoom-slider:hover {
+    background-color: #f4f4f4 !important;
 }

@@ -18,7 +18,9 @@ async fn main() -> std::io::Result<()> {
 
     println!("Server running at http://{}", address);
 
-    HttpServer::new(|| {
+    let weather_service = web::Data::new(weather_service::WeatherService::new());
+
+    HttpServer::new(move || {
         let cors = Cors::default()
             .allow_any_origin()
             .allow_any_method()
@@ -27,6 +29,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .wrap(Logger::default())
+            .app_data(weather_service.clone())
             .service(
                 web::scope("/api/v1")
                     .service(routes::weather::get_current_weather)

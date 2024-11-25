@@ -30,17 +30,16 @@ pub struct WeatherResponse {
 pub struct OpenMeteoResponse {
     pub latitude: f64,
     pub longitude: f64,
-    pub elevation: f64,
+    pub elevation: Option<f64>,
     pub timezone: String,
     pub current: OpenMeteoCurrent,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct OpenMeteoCurrent {
-    pub time: String,
     pub temperature_2m: f64,
     pub relative_humidity_2m: f64,
-    pub rain: f64,
+    pub precipitation: f64,
     pub wind_speed_10m: f64,
     pub wind_direction_10m: f64,
     pub wind_gusts_10m: f64,
