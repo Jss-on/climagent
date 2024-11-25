@@ -25,8 +25,9 @@ function createBaseLayers() {
         type: 'base',
         visible: false,
         source: new ol.source.XYZ({
-            url: 'https://stamen-tiles.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg',
-            maxZoom: 18
+            url: 'https://tile.opentopomap.org/{z}/{x}/{y}.png',
+            maxZoom: 17,
+            attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
         })
     });
 
@@ -71,6 +72,86 @@ function initMap() {
             new ol.control.FullScreen(),
             new ol.control.ZoomSlider()
         ]
+    });
+
+    // Add geolocation control
+    const geolocation = new ol.Geolocation({
+        trackingOptions: {
+            enableHighAccuracy: true
+        },
+        projection: map.getView().getProjection()
+    });
+
+    // Create a GPS button
+    const gpsButton = document.createElement('button');
+    gpsButton.innerHTML = '📍';
+    gpsButton.className = 'gps-button ol-unselectable ol-control';
+    gpsButton.title = 'Show my location';
+
+    const gpsElement = document.createElement('div');
+    gpsElement.className = 'ol-gps ol-unselectable ol-control';
+    gpsElement.appendChild(gpsButton);
+
+    map.addControl(new ol.control.Control({
+        element: gpsElement
+    }));
+
+    // Create a vector layer for the location marker
+    const locationLayer = new ol.layer.Vector({
+        source: new ol.source.Vector()
+    });
+    map.addLayer(locationLayer);
+
+    // Handle GPS button click
+    let isTracking = false;
+    const positionFeature = new ol.Feature();
+    positionFeature.setStyle(new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: 8,
+            fill: new ol.style.Fill({ color: '#3399CC' }),
+            stroke: new ol.style.Stroke({ color: '#fff', width: 2 })
+        })
+    }));
+
+    const accuracyFeature = new ol.Feature();
+    locationLayer.getSource().addFeatures([accuracyFeature, positionFeature]);
+
+    gpsButton.addEventListener('click', function() {
+        if (!isTracking) {
+            geolocation.setTracking(true);
+            gpsButton.classList.add('active');
+        } else {
+            geolocation.setTracking(false);
+            gpsButton.classList.remove('active');
+            positionFeature.setGeometry(undefined);
+            accuracyFeature.setGeometry(undefined);
+        }
+        isTracking = !isTracking;
+    });
+
+    // Handle geolocation events
+    geolocation.on('change:position', function() {
+        const coordinates = geolocation.getPosition();
+        positionFeature.setGeometry(coordinates ? new ol.geom.Point(coordinates) : null);
+        if (coordinates) {
+            map.getView().animate({
+                center: coordinates,
+                zoom: 15,
+                duration: 1000
+            });
+        }
+    });
+
+    geolocation.on('change:accuracyGeometry', function() {
+        accuracyFeature.setGeometry(geolocation.getAccuracyGeometry());
+    });
+
+    // Handle geolocation errors
+    geolocation.on('error', function(error) {
+        console.error('Geolocation error:', error);
+        alert('Error getting your location. Please make sure location services are enabled.');
+        isTracking = false;
+        gpsButton.classList.remove('active');
     });
 
     // Add layer switcher control

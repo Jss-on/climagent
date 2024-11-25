@@ -206,3 +206,27 @@ body {
 .ol-zoom-slider:hover {
     background-color: #f4f4f4 !important;
 }
+
+.ol-gps {
+    top: 100px;
+    left: .5em;
+}
+
+.gps-button {
+    background-color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 1.2em;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.gps-button:hover {
+    background-color: #f4f4f4;
+}
+
+.gps-button.active {
+    background-color: #4CAF50;
+    color: white;
+}
