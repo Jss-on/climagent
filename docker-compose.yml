@@ -1,26 +1,6 @@
 version: '3.8'
 
 services:
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./backend/app:/app/app
-      - ./logs:/app/logs
-    environment:
-      - API_V1_PREFIX=/api/v1
-      - PYTHONUNBUFFERED=1
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
   frontend:
     build:
       context: ./web-frontend
@@ -30,9 +10,6 @@ services:
         - npm run build
     ports:
       - "80:80"
-    depends_on:
-      - backend
-      - rust-backend
     volumes:
       - ./web-frontend/src:/usr/share/nginx/html
       - ./web-frontend/dist:/usr/share/nginx/html/dist

@@ -230,79 +230,145 @@ function stopGPSTracking() {
     vectorSource.clear();
 }
 
-async function handleMapClick(event) {
-    const coords = ol.proj.transform(event.coordinate, 'EPSG:3857', 'EPSG:4326');
-    const weatherInfo = document.getElementById('weather-data');
-    weatherInfo.innerHTML = 'Loading weather data...';
-
-    // Clear previous markers
-    vectorSource.clear();
-    
-    // Add new dot marker at exact click location
-    const marker = new ol.Feature({
-        geometry: new ol.geom.Point(event.coordinate)
-    });
-
-    // Add marker with animation
-    let start = null;
-    const duration = 300;
-
-    function animate(timestamp) {
-        if (!start) start = timestamp;
-        const progress = (timestamp - start) / duration;
-
-        if (progress < 1) {
-            const scale = Math.min(1, progress * 2);
-            const bounceScale = 1 + Math.sin(progress * Math.PI) * 0.2;
-            
-            marker.setStyle(new ol.style.Style({
-                image: new ol.style.Circle({
-                    radius: 6 * bounceScale,
-                    fill: new ol.style.Fill({
-                        color: '#FF4444'
-                    }),
-                    stroke: new ol.style.Stroke({
-                        color: '#FFFFFF',
-                        width: 2
-                    })
-                })
-            }));
-            
-            requestAnimationFrame(animate);
-        }
-    }
-
-    vectorSource.addFeature(marker);
-    requestAnimationFrame(animate);
-
+async function fetchWeatherData(latitude, longitude) {
     try {
-        const response = await fetch(`/api/v1/weather/current?lat=${coords[1]}&lon=${coords[0]}`);
-        if (!response.ok) {
-            throw new Error(`Weather data request failed: ${response.status}`);
+        // Validate latitude and longitude
+        if (!isValidCoordinate(latitude, longitude)) {
+            throw new Error('Invalid coordinates');
         }
+
+        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,wind_direction_10m,apparent_temperature,is_day,weather_code,cloud_cover,wind_gusts_10m&timezone=auto`;
+        
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+            throw new Error(`Weather data request failed: ${response.status} - ${await response.text()}`);
+        }
+
         const data = await response.json();
-        displayWeatherData(data);
+        return data;
+    } catch (error) {
+        console.error('Error fetching weather data:', error);
+        throw error;
+    }
+}
+
+async function fetchElevationData(latitude, longitude) {
+    try {
+        if (!isValidCoordinate(latitude, longitude)) {
+            throw new Error('Invalid coordinates');
+        }
+
+        const apiUrl = `https://api.open-meteo.com/v1/elevation?latitude=${latitude}&longitude=${longitude}`;
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+            throw new Error(`Elevation data request failed: ${response.status} - ${await response.text()}`);
+        }
+
+        const data = await response.json();
+        return data.elevation[0];
+    } catch (error) {
+        console.error('Error fetching elevation data:', error);
+        throw error;
+    }
+}
+
+function getWeatherDescription(code) {
+    const weatherCodes = {
+        0: 'Clear sky',
+        1: 'Mainly clear',
+        2: 'Partly cloudy',
+        3: 'Overcast',
+        45: 'Foggy',
+        48: 'Depositing rime fog',
+        51: 'Light drizzle',
+        53: 'Moderate drizzle',
+        55: 'Dense drizzle',
+        56: 'Light freezing drizzle',
+        57: 'Dense freezing drizzle',
+        61: 'Slight rain',
+        63: 'Moderate rain',
+        65: 'Heavy rain',
+        66: 'Light freezing rain',
+        67: 'Heavy freezing rain',
+        71: 'Slight snow fall',
+        73: 'Moderate snow fall',
+        75: 'Heavy snow fall',
+        77: 'Snow grains',
+        80: 'Slight rain showers',
+        81: 'Moderate rain showers',
+        82: 'Violent rain showers',
+        85: 'Slight snow showers',
+        86: 'Heavy snow showers',
+        95: 'Thunderstorm',
+        96: 'Thunderstorm with slight hail',
+        99: 'Thunderstorm with heavy hail'
+    };
+    return weatherCodes[code] || 'Unknown';
+}
+
+async function handleMapClick(event) {
+    try {
+        const coordinates = ol.proj.transform(event.coordinate, 'EPSG:3857', 'EPSG:4326');
+        const [longitude, latitude] = coordinates;
+
+        const weatherInfo = document.getElementById('weather-data');
+        weatherInfo.innerHTML = 'Loading weather data...';
+
+        const [weatherData, elevation] = await Promise.all([
+            fetchWeatherData(latitude, longitude),
+            fetchElevationData(latitude, longitude)
+        ]);
+
+        displayWeatherData(weatherData, elevation, latitude, longitude);
     } catch (error) {
         console.error('Error fetching weather data:', error);
         weatherInfo.innerHTML = 'Error loading weather data. Please try again.';
     }
 }
 
-function displayWeatherData(data) {
+function displayWeatherData(data, elevation, latitude, longitude) {
     const weatherInfo = document.getElementById('weather-data');
+    const current = data.current;
+    const weatherDescription = getWeatherDescription(current.weather_code);
+
     weatherInfo.innerHTML = `
-        <p><strong>Location:</strong></p>
-        <p>Elevation: ${data.location.elevation.toFixed(0)} meters</p>
-        <p>Coordinates: ${data.location.latitude.toFixed(4)}°, ${data.location.longitude.toFixed(4)}°</p>
-        <hr>
-        <p><strong>Weather:</strong></p>
-        <p>Temperature: ${data.current.temperature}°C</p>
-        <p>Humidity: ${data.current.humidity}%</p>
-        <p>Wind Speed: ${data.current.wind_speed} m/s</p>
-        <p>Wind Direction: ${data.current.wind_direction}°</p>
-        <p>Rain: ${data.current.rain} mm</p>
-        <p>Last Updated: ${new Date(data.current.time).toLocaleString()}</p>
+        <div class="weather-card">
+            <div class="weather-header">
+                <h3>Weather Information</h3>
+                <p class="coordinates">Lat: ${latitude.toFixed(4)}°, Lon: ${longitude.toFixed(4)}°</p>
+                <p class="elevation">Elevation: ${elevation !== undefined ? elevation.toFixed(0) : 'N/A'} meters</p>
+            </div>
+            <div class="weather-body">
+                <div class="weather-item">
+                    <strong>Temperature:</strong> ${current.temperature_2m}°C
+                    <br>
+                    <strong>Feels Like:</strong> ${current.apparent_temperature}°C
+                </div>
+                <div class="weather-item">
+                    <strong>Weather:</strong> ${weatherDescription}
+                    <br>
+                    <strong>Cloud Cover:</strong> ${current.cloud_cover}%
+                </div>
+                <div class="weather-item">
+                    <strong>Humidity:</strong> ${current.relative_humidity_2m}%
+                    <br>
+                    <strong>Precipitation:</strong> ${current.precipitation} mm
+                </div>
+                <div class="weather-item">
+                    <strong>Wind Speed:</strong> ${current.wind_speed_10m} km/h
+                    <br>
+                    <strong>Wind Gusts:</strong> ${current.wind_gusts_10m} km/h
+                    <br>
+                    <strong>Wind Direction:</strong> ${current.wind_direction_10m}°
+                </div>
+            </div>
+        </div>
     `;
+}
+
+function isValidCoordinate(latitude, longitude) {
+    return latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
 }
 
 // Initialize the map when the page loads
