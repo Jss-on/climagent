@@ -19,25 +19,6 @@ services:
     networks:
       - app-network
 
-  rust-backend:
-    build:
-      context: ./rust-backend
-      dockerfile: Dockerfile
-    ports:
-      - "8001:8000"
-    environment:
-      - HOST=0.0.0.0
-      - PORT=8000
-      - RUST_LOG=info
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/weather/current?lat=1.3521&lon=103.8198"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - app-network
-
 networks:
   app-network:
     driver: bridge
