@@ -1,6 +1,8 @@
 let map;
 let vectorSource;
 let vectorLayer;
+let markerSource;
+let markerLayer;
 let gpsActive = false;
 let watchId = null;
 
@@ -59,11 +61,29 @@ function initMap() {
         })
     });
 
+    // Create vector source and layer for markers
+    markerSource = new ol.source.Vector();
+    markerLayer = new ol.layer.Vector({
+        source: markerSource,
+        style: new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 6,
+                fill: new ol.style.Fill({
+                    color: '#c7040e'
+                }),
+                stroke: new ol.style.Stroke({
+                    color: '#ffffff',
+                    width: 2
+                })
+            })
+        })
+    });
+
     const baseLayers = createBaseLayers();
 
     map = new ol.Map({
         target: 'map',
-        layers: [baseLayers, vectorLayer],
+        layers: [baseLayers, vectorLayer, markerLayer],
         view: new ol.View({
             center: ol.proj.fromLonLat([0, 0]),
             zoom: 2
@@ -72,7 +92,11 @@ function initMap() {
             new ol.control.Zoom(),
             new ol.control.ScaleLine(),
             new ol.control.FullScreen(),
-            new ol.control.ZoomSlider()
+            new ol.control.ZoomSlider(),
+            new ol.control.LayerSwitcher({
+                tipLabel: 'Legend', // Optional label for button
+                groupSelectStyle: 'group' // Optional, use 'group' or 'none'
+            })
         ]
     });
 
@@ -88,24 +112,27 @@ function initMap() {
 
     // Add layer switcher control
     const layerSwitcher = document.createElement('div');
-    layerSwitcher.className = 'layer-switcher';
-    const mapTypes = ['Street Map', 'Satellite', 'Terrain'];
+    layerSwitcher.className = 'layer-switcher ol-unselectable ol-control';
+    const mapTypes = ['Streets', 'Satellite', 'Terrain'];
     
-    mapTypes.forEach(type => {
+    mapTypes.forEach((type, index) => {
         const button = document.createElement('button');
         button.textContent = type;
-        button.onclick = () => {
-            const layers = baseLayers.getLayers();
-            layers.forEach(layer => {
-                layer.setVisible(layer.get('title') === type);
-            });
-            // Update active state
-            layerSwitcher.querySelectorAll('button').forEach(btn => {
-                btn.classList.remove('active');
-            });
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons
+            layerSwitcher.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
             button.classList.add('active');
-        };
-        if (type === 'Street Map') {
+            
+            // Update map layer visibility
+            const layers = baseLayers.getLayers().getArray();
+            layers.forEach((layer, i) => {
+                layer.setVisible(i === index);
+            });
+        });
+        
+        // Set initial active state
+        if (type === 'Streets') {
             button.classList.add('active');
         }
         layerSwitcher.appendChild(button);
@@ -314,6 +341,46 @@ async function handleMapClick(event) {
 
         const weatherInfo = document.getElementById('weather-data');
         weatherInfo.innerHTML = 'Loading weather data...';
+
+        // Clear previous markers
+        markerSource.clear();
+
+        // Add new marker
+        const marker = new ol.Feature({
+            geometry: new ol.geom.Point(event.coordinate)
+        });
+
+        // Add marker with animation
+        let start = null;
+        const duration = 300;
+
+        function animate(timestamp) {
+            if (!start) start = timestamp;
+            const progress = (timestamp - start) / duration;
+
+            if (progress < 1) {
+                const scale = Math.min(1, progress * 2);
+                const bounceScale = 1 + Math.sin(progress * Math.PI) * 0.2;
+                
+                marker.setStyle(new ol.style.Style({
+                    image: new ol.style.Circle({
+                        radius: 6 * bounceScale,
+                        fill: new ol.style.Fill({
+                            color: '#c7040e'
+                        }),
+                        stroke: new ol.style.Stroke({
+                            color: '#ffffff',
+                            width: 2
+                        })
+                    })
+                }));
+                
+                requestAnimationFrame(animate);
+            }
+        }
+
+        markerSource.addFeature(marker);
+        requestAnimationFrame(animate);
 
         const [weatherData, elevation] = await Promise.all([
             fetchWeatherData(latitude, longitude),
