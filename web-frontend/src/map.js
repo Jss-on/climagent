@@ -334,37 +334,99 @@ function displayWeatherData(data, elevation, latitude, longitude) {
 
     weatherInfo.innerHTML = `
         <div class="weather-card">
-            <div class="weather-header">
-                <h3>Weather Information</h3>
-                <p class="coordinates">Lat: ${latitude.toFixed(4)}°, Lon: ${longitude.toFixed(4)}°</p>
-                <p class="elevation">Elevation: ${elevation !== undefined ? elevation.toFixed(0) : 'N/A'} meters</p>
+            <div class="weather-header" style="display: flex; justify-content: center; align-items: center;">
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <strong>📍 Coordinates</strong>
+                    <div class="weather-value" style="text-align: center;">
+                        ${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°
+                    </div>
+                    <strong>🏔️ Elevation</strong>
+                    <div class="weather-value" style="text-align: center;">
+                        ${elevation !== undefined ? elevation.toFixed(0) : 'N/A'} meters
+                    </div>
+                </div>
             </div>
             <div class="weather-body">
                 <div class="weather-item">
-                    <strong>Temperature:</strong> ${current.temperature_2m}°C
-                    <br>
-                    <strong>Feels Like:</strong> ${current.apparent_temperature}°C
+                    <strong>🌡️ Temperature</strong>
+                    <div class="weather-value">${current.temperature_2m}°C</div>
+                    <strong>🌡️ Feels Like</strong>
+                    <div class="weather-value">${current.apparent_temperature}°C</div>
                 </div>
                 <div class="weather-item">
-                    <strong>Weather:</strong> ${weatherDescription}
-                    <br>
-                    <strong>Cloud Cover:</strong> ${current.cloud_cover}%
+                    <strong>☁️ Weather</strong>
+                    <div class="weather-value">${weatherDescription}</div>
+                    <strong>☁️ Cloud Cover</strong>
+                    <div class="weather-value">${current.cloud_cover}%</div>
                 </div>
                 <div class="weather-item">
-                    <strong>Humidity:</strong> ${current.relative_humidity_2m}%
-                    <br>
-                    <strong>Precipitation:</strong> ${current.precipitation} mm
+                    <strong>💧 Humidity</strong>
+                    <div class="weather-value">${current.relative_humidity_2m}%</div>
+                    <strong>🌧️ Precipitation</strong>
+                    <div class="weather-value">${current.precipitation} mm</div>
                 </div>
                 <div class="weather-item">
-                    <strong>Wind Speed:</strong> ${current.wind_speed_10m} km/h
-                    <br>
-                    <strong>Wind Gusts:</strong> ${current.wind_gusts_10m} km/h
-                    <br>
-                    <strong>Wind Direction:</strong> ${current.wind_direction_10m}°
+                    <strong>💨 Wind Speed</strong>
+                    <div class="weather-value">${current.wind_speed_10m} km/h</div>
+                    <strong>🌪️ Wind Gusts</strong>
+                    <div class="weather-value">${current.wind_gusts_10m} km/h</div>
+                    <strong>🧭 Wind Direction</strong>
+                    <div class="weather-value">${current.wind_direction_10m}°</div>
                 </div>
             </div>
         </div>
     `;
+    
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+
+    function dragStart(e) {
+        const weatherInfo = document.querySelector('.weather-info');
+        
+        // Get the current position from the transform
+        const transform = window.getComputedStyle(weatherInfo).getPropertyValue('transform');
+        const matrix = new DOMMatrix(transform);
+        currentX = matrix.m41;
+        currentY = matrix.m42;
+        
+        initialX = e.clientX - currentX;
+        initialY = e.clientY - currentY;
+        
+        if (e.target.closest('.weather-info')) {
+            isDragging = true;
+        }
+    }
+
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+            const weatherInfo = document.querySelector('.weather-info');
+            
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+            
+            weatherInfo.style.transform = `translate(${currentX}px, ${currentY}px)`;
+        }
+    }
+
+    function dragEnd(e) {
+        isDragging = false;
+    }
+
+    function initDraggable() {
+        const weatherInfo = document.querySelector('.weather-info');
+        if (!weatherInfo) return;
+        
+        weatherInfo.addEventListener('mousedown', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+    }
+
+    // Initialize draggable functionality
+    setTimeout(initDraggable, 100); // Small delay to ensure DOM is ready
 }
 
 function isValidCoordinate(latitude, longitude) {

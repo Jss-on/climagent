@@ -9,17 +9,138 @@ body {
     height: 100vh;
 }
 
+.weather-card {
+    transition: all 0.3s ease;
+    background: linear-gradient(to bottom right, #ffffff, #f8f9fa);
+    cursor: move;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.weather-card:active {
+    cursor: grabbing;
+}
+
+.weather-header {
+    margin: 5px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.weather-header:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.weather-header h3 {
+    color: #2d3748;
+    display: inline-block;
+    margin-bottom: 6px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.coordinates, .elevation {
+    color: #4a5568;
+    font-size: 0.85em;
+    margin: 4px 0;
+    letter-spacing: 0.3px;
+    font-weight: 500;
+}
+
+.weather-body {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+    padding: 5px;
+}
+
+.weather-item {
+    margin: 5px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.weather-item:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.weather-item strong {
+    color: #2d3748;
+    display: inline-block;
+    margin-bottom: 6px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.weather-value {
+    color: #1a202c;
+    font-size: 1.15em;
+    margin-left: 5px;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
 .weather-info {
     position: fixed;
-    top: 20px;
-    right: 20px;
+    top: 50%;
+    left: 20px;
+    transform: translate(0, -50%);
     background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    max-width: 300px;
-    z-index: 1;
-    font-family: Arial, sans-serif;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    width: 100%;
+    z-index: 1000;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    transition: none;
+    letter-spacing: 0.2px;
+    overflow: auto;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: move;
+}
+
+.weather-info:active {
+    cursor: grabbing;
+}
+
+.weather-info:hover {
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+}
+
+.weather-info::-webkit-scrollbar {
+    width: 8px;
+}
+
+.weather-info::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.weather-info::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 4px;
+}
+
+.weather-info::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
 }
 
 .weather-info p {
@@ -37,13 +158,10 @@ body {
     margin: 12px 0;
 }
 
-.weather-info:hover {
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-}
-
 .weather-info h3 {
     margin-top: 0;
     margin-bottom: 10px;
+    font-size: 1.2em;
     color: #333;
     cursor: move;
 }
@@ -53,199 +171,4 @@ body {
     line-height: 1.5;
     color: #666;
     cursor: default;
-}
-
-/* Draw controls */
-.draw-control {
-    top: 20px;
-    left: 20px;
-}
-
-.draw-controls {
-    background: white;
-    padding: 10px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.draw-controls select {
-    margin: 5px;
-    padding: 5px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: white;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.draw-controls select:hover {
-    border-color: #999;
-}
-
-/* Layer switcher custom styles */
-.ol-control.layer-switcher {
-    top: 20px;
-    right: 340px;
-    z-index: 2;
-}
-
-.layer-switcher.shown.ol-control {
-    background-color: white;
-}
-
-.layer-switcher.shown.ol-control:hover {
-    background-color: white;
-}
-
-.layer-switcher button {
-    background-color: white;
-    color: #666;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.layer-switcher button:hover {
-    background-color: #f5f5f5;
-}
-
-.layer-switcher.shown {
-    padding: 10px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.layer-switcher {
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: white;
-    border-radius: 4px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    padding: 4px;
-    z-index: 1000;
-    display: flex;
-    gap: 4px;
-}
-
-.layer-switcher button {
-    background: white;
-    border: none;
-    padding: 8px 12px;
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    color: #666;
-    border-radius: 2px;
-    transition: all 0.2s;
-}
-
-.layer-switcher button:hover {
-    background: #f4f4f4;
-    color: #333;
-}
-
-.layer-switcher button.active {
-    background: #e6e6e6;
-    color: #000;
-    font-weight: 500;
-}
-
-/* OpenLayers controls styling */
-.ol-zoom {
-    top: auto;
-    bottom: 20px;
-    right: 20px;
-    left: auto;
-}
-
-.ol-zoom-in,
-.ol-zoom-out {
-    background-color: white !important;
-    color: #666 !important;
-}
-
-.ol-zoom-in:hover,
-.ol-zoom-out:hover {
-    background-color: #f4f4f4 !important;
-}
-
-.ol-scale-line {
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 4px;
-    bottom: 8px;
-    left: 8px;
-    padding: 2px;
-}
-
-.ol-full-screen {
-    top: auto;
-    bottom: 95px;
-    right: 20px;
-    left: auto;
-}
-
-.ol-full-screen button {
-    background-color: white !important;
-}
-
-.ol-full-screen button:hover {
-    background-color: #f4f4f4 !important;
-}
-
-.ol-zoom-slider {
-    top: auto !important;
-    bottom: 60px !important;
-    right: 20px !important;
-    left: auto !important;
-    height: 150px !important;
-    background-color: white !important;
-    border-radius: 4px !important;
-}
-
-.ol-zoom-slider:hover {
-    background-color: #f4f4f4 !important;
-}
-
-.ol-gps {
-    top: 100px;
-    left: .5em;
-}
-
-.gps-button {
-    position: fixed;
-    bottom: 95px;
-    right: 10px;
-    width: 40px;
-    height: 40px;
-    background: white;
-    border: none;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    cursor: pointer;
-    padding: 8px;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.3s;
-}
-
-.gps-button:hover {
-    background-color: #f1f1f1;
-}
-
-.gps-button img {
-    width: 24px;
-    height: 24px;
-    opacity: 0.7;
-}
-
-.gps-button.active {
-    background-color: #e8f0fe;
-}
-
-.gps-button.active img {
-    opacity: 1;
-    filter: invert(24%) sepia(90%) saturate(1000%) hue-rotate(200deg) brightness(96%) contrast(97%);
 }
