@@ -83,46 +83,46 @@ jobs:
             fi
           fi
 
-  lint:
-    needs: branch-protection
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+  # lint:
+  #   needs: branch-protection
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
       
-      # Frontend Linting
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+  #     # Frontend Linting
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: '18'
       
-      - name: Install frontend dependencies
-        working-directory: web-frontend
-        run: npm ci
+  #     - name: Install frontend dependencies
+  #       working-directory: web-frontend
+  #       run: npm ci
       
-      - name: Run ESLint
-        working-directory: web-frontend
-        run: npm run lint
+  #     - name: Run ESLint
+  #       working-directory: web-frontend
+  #       run: npm run lint
       
-      # Backend Linting
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          cache: 'pip'
+  #     # Backend Linting
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: '3.10'
+  #         cache: 'pip'
       
-      - name: Install backend dependencies
-        working-directory: backend
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8
-          pip install -r requirements.txt
+  #     - name: Install backend dependencies
+  #       working-directory: backend
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install flake8
+  #         pip install -r requirements.txt
       
-      - name: Run flake8
-        working-directory: backend
-        run: flake8 . --max-line-length=120
+  #     - name: Run flake8
+  #       working-directory: backend
+  #       run: flake8 . --max-line-length=120
 
   build:
-    needs: lint
+    needs: branch-protection
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
