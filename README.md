@@ -1,188 +1,137 @@
-# Weather API Documentation
+# Climate Agent
 
-This document provides instructions on how to access and use the Weather API.
+A comprehensive weather and climate data platform that provides accurate weather information and forecasting capabilities.
+
+![CI Pipeline](https://github.com/Jss-on/climagent/workflows/CI%20Pipeline/badge.svg)
+![CD Pipeline](https://github.com/Jss-on/climagent/workflows/CD%20Pipeline/badge.svg)
+
+## Project Overview
+
+Climate Agent is a modern weather data platform that combines:
+- Real-time weather data access
+- Historical weather analysis
+- Weather forecasting capabilities
+- User-friendly web interface
+- RESTful API services
+
+## Architecture
+
+The project consists of two main components:
+
+### Backend (Python)
+- RESTful API built with FastAPI
+- Weather data processing and analysis
+- Integration with external weather services
+- Data caching and optimization
+
+### Frontend (JavaScript)
+- React-based web interface
+- Interactive weather maps
+- Real-time weather updates
+- Responsive design
 
 ## Getting Started
 
 ### Prerequisites
-- Docker and Docker Compose installed on your system
-- Git (optional, for cloning the repository)
+- Docker and Docker Compose
+- Node.js 18+ (for local development)
+- Python 3.10+ (for local development)
+- Git
 
-### Running the Application
-1. Start the application using Docker Compose:
+### Quick Start
 
-```bash
-docker-compose up
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Jss-on/climagent.git
+   cd climate
+   ```
+
+2. Start with Docker:
+   ```bash
+   docker-compose up
+   ```
+
+3. Access the application:
+   - Web Interface: http://localhost:80
+   - API Documentation: http://localhost:8000/docs
+
+### Local Development Setup
+
+See our [Contributing Guide](CONTRIBUTING.md) for detailed setup instructions.
+
+## API Documentation
+
+### Weather Endpoints
+
+#### Current Weather
+```http
+GET /api/v1/weather/current
 ```
 
-2. The API will be available at: `http://localhost:8000`
+Query Parameters:
+- `lat`: Latitude (decimal)
+- `lon`: Longitude (decimal)
 
-## API Endpoints
-
-### Get Weather Data
-Retrieve weather information for a specific location.
-
-**Endpoint:** `/weather`
-
-**Method:** GET
-
-**Query Parameters:**
-- `city` (required): Name of the city
-- `country` (optional): Country code (2 letters, ISO 3166-1 alpha-2)
-
-**Example Request:**
-```bash
-curl "http://localhost:8000/weather?city=London&country=GB"
+#### DMS Format Weather
+```http
+GET /api/v1/weather/current/dms
 ```
 
-**Example Response:**
-```json
-{
-    "city": "London",
-    "country": "GB",
-    "temperature": 18.5,
-    "humidity": 65,
-    "description": "Partly cloudy"
-}
+Query Parameters:
+- `coordinates`: Location in DMS format
+
+For complete API documentation, visit `/docs` when running the application.
+
+## Project Structure
+
+```
+climate/
+├── backend/           # Python backend service
+├── web-frontend/      # React frontend application
+├── docs/             # Project documentation
+│   ├── BRANCHING_STRATEGY.md
+│   └── VERSIONING.md
+├── scripts/          # Utility scripts
+├── .github/          # GitHub configurations
+│   └── workflows/    # CI/CD pipeline definitions
+├── docker-compose.yml
+└── README.md
 ```
 
-### Get Current Weather Data
-Retrieve current weather information for a specific location using latitude and longitude.
+## Development Process
 
-**Endpoint:** `/api/v1/weather/current`
+We follow a structured development process:
 
-**Method:** GET
+1. **Branching Strategy**
+   - `prod`: Production branch
+   - `alpha`: Development branch
+   - `feature/*`: Feature branches
+   - `hotfix/*`: Emergency fixes
+   - See [Branching Strategy](docs/BRANCHING_STRATEGY.md)
 
-**Query Parameters:**
-- `lat` (required): Latitude in decimal format
-- `lon` (required): Longitude in decimal format
+2. **Versioning**
+   - Semantic Versioning (SemVer)
+   - Automated version management
+   - See [Versioning Guide](docs/VERSIONING.md)
 
-**Example Request:**
-For coordinates 8°35'52.3"N 125°05'50.8"E (converted to decimal: 8.597861, 125.097444)
-```bash
-curl "http://localhost:8000/api/v1/weather/current?lat=8.597861&lon=125.097444"
-```
+3. **CI/CD Pipeline**
+   - Automated testing
+   - Code quality checks
+   - Containerized deployments
+   - Staging and production environments
 
-**Example Response:**
-```json
-{
-  "location": {
-    "latitude": 8.625,
-    "longitude": 125.125,
-    "elevation": 2393,
-    "timezone": "Asia/Singapore"
-  },
-  "current": {
-    "temperature": 13.1999998092651,
-    "humidity": 89,
-    "rain": 0,
-    "wind_speed": 8.47339344024658,
-    "wind_direction": 77.7352447509766,
-    "wind_gusts": 42.4799995422363,
-    "time": "2024-11-20T09:45:00"
-  }
-}
-```
+## Contributing
 
-### Get Current Weather Data (DMS Coordinates)
-Retrieve current weather information using coordinates in Degrees, Minutes, Seconds format.
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for:
+- Development setup
+- Coding standards
+- Pull request process
+- Release procedures
 
-**Endpoint:** `/api/v1/weather/current/dms`
+## License
 
-**Method:** GET
+[Add your license information here]
 
-**Query Parameters:**
-- `coordinates` (required): Coordinates in DMS format
+## Contact
 
-**Example Requests:**
-
-Using URL-encoded coordinates:
-```bash
-curl "http://localhost:8000/api/v1/weather/current/dms?coordinates=35%C2%B052'59.9%22N%2076%C2%B030'48.4%22E"
-```
-
-Alternative methods:
-```bash
-# Using single quotes to wrap the URL
-curl 'http://localhost:8000/api/v1/weather/current/dms?coordinates=35°52'\''59.9"N 76°30'\''48.4"E'
-
-# Using --data-urlencode (recommended)
-curl -G "http://localhost:8000/api/v1/weather/current/dms" --data-urlencode "coordinates=35°52'59.9\"N 76°30'48.4\"E"
-```
-
-Here's what each special character becomes when URL-encoded:
-- `°` becomes `%C2%B0`
-- `'` becomes `'`
-- `"` becomes `%22`
-- Space becomes `%20`
-
-**Example Response:**
-```json
-{
-  "location": {
-    "latitude": 35.883306,
-    "longitude": 76.513444,
-    "elevation": 1523,
-    "timezone": "Asia/Karachi"
-  },
-  "current": {
-    "temperature": 12.3,
-    "humidity": 65,
-    "rain": 0,
-    "wind_speed": 5.2,
-    "wind_direction": 180.5,
-    "wind_gusts": 8.7,
-    "time": "2024-11-20T09:45:00"
-  }
-}
-```
-
-### Error Responses
-
-**Invalid Request (400 Bad Request):**
-```json
-{
-    "detail": "City parameter is required"
-}
-```
-
-**City Not Found (404 Not Found):**
-```json
-{
-    "detail": "City not found"
-}
-```
-
-## Frontend Application
-
-The web frontend is available at: `http://localhost:3000`
-
-## Development
-
-To run the application in development mode:
-
-1. Start the backend:
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-2. Start the frontend:
-```bash
-cd web-frontend
-npm install
-npm start
-```
-
-## Environment Variables
-
-The application uses the following environment variables:
-
-- `WEATHER_API_KEY`: Your weather service API key
-- `PORT`: Backend server port (default: 8000)
-- `REACT_APP_API_URL`: Frontend API URL (default: http://localhost:8000)
-
-These can be configured in the `.env` file or through Docker Compose.
+[Add your contact information here]
