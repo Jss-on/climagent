@@ -1,0 +1,19 @@
+{
+  "name": "climate-web-frontend",
+  "version": "1.0.0",
+  "description": "Climate web frontend application",
+  "main": "src/map.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.9",
+    "@babel/preset-env": "^7.22.9",
+    "@testing-library/dom": "^9.3.1",
+    "@testing-library/jest-dom": "^5.17.0",
+    "babel-jest": "^29.6.2",
+    "jest": "^29.6.2",
+    "jest-environment-jsdom": "^29.6.2"
+  }
+}
