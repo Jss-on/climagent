@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./lancedb:/app/lancedb
+    environment:
+      - COHERE_API_KEY=${COHERE_API_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - ./uploads:/app/uploads
+      - ./lancedb:/app/lancedb
+    environment:
+      - COHERE_API_KEY=${COHERE_API_KEY}
+    depends_on:
+      app:
+        condition: service_healthy
