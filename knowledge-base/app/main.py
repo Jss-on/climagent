@@ -3,150 +3,112 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from typing import List
 import tempfile
-from pypdf import PdfReader
-from docx import Document
 import shutil
-from dotenv import load_dotenv
-from langchain.vectorstores import LanceDB
-from langchain.embeddings import CohereEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-import lancedb
-import cohere
+from app.config import settings
 
-# Load environment variables
-load_dotenv()
+from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
+from langchain_cohere import CohereRerank, CohereEmbeddings
+from langchain_community.vectorstores import LanceDB
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader, TextLoader, Docx2txtLoader
 
-app = FastAPI(title="Knowledge Base API")
+# Initialize FastAPI app
+app = FastAPI(title=settings.APP_TITLE, version="0.1.1")
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.ALLOW_ORIGINS,
+    allow_credentials=settings.ALLOW_CREDENTIALS,
+    allow_methods=settings.ALLOW_METHODS,
+    allow_headers=settings.ALLOW_HEADERS,
 )
 
-# Initialize Cohere client and embeddings
-co = cohere.Client(os.getenv("COHERE_API_KEY"))
+# Initialize embeddings
 embeddings = CohereEmbeddings(
-    cohere_api_key=os.getenv("COHERE_API_KEY"),
-    model="embed-multilingual-v3.0"
+    model=settings.COHERE_EMBED_MODEL,
+    cohere_api_key=settings.COHERE_API_KEY
 )
 
-# Initialize LanceDB
-UPLOAD_DIR = "uploads"
-DB_PATH = "lancedb"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# Connect to LanceDB
-db = lancedb.connect(DB_PATH)
-
-# Initialize vector store
+# Initialize vector store and retriever
 vector_store = LanceDB(
-    connection=db,
+    uri=settings.DB_PATH,
     embedding=embeddings,
-    table_name="documents"
+)
+
+# Create the retriever with search parameters
+retriever = vector_store.as_retriever(
+    search_type="mmr",
+    search_kwargs={"k": settings.MAX_INITIAL_RESULTS}
+)
+
+# Initialize reranker
+reranker = CohereRerank(
+    model=settings.COHERE_RERANK_MODEL,
+    cohere_api_key=settings.COHERE_API_KEY
+)
+
+# Create compression retriever
+compression_retriever = ContextualCompressionRetriever(
+    base_compressor=reranker,
+    base_retriever=retriever
 )
 
 def extract_text_from_pdf(file_path: str) -> str:
     """Extract text from PDF file."""
-    reader = PdfReader(file_path)
-    text = ""
-    for page in reader.pages:
-        text += page.extract_text() + "\n"
-    return text
+    loader = PyPDFLoader(file_path)
+    return "\n\n".join([page.page_content for page in loader.load()])
 
 def extract_text_from_docx(file_path: str) -> str:
     """Extract text from DOCX file."""
-    doc = Document(file_path)
-    return "\n".join([paragraph.text for paragraph in doc.paragraphs])
+    loader = Docx2txtLoader(file_path)
+    return "\n\n".join([doc.page_content for doc in loader.load()])
 
 def extract_text_from_txt(file_path: str) -> str:
     """Extract text from TXT file."""
-    with open(file_path, 'r', encoding='utf-8') as file:
-        return file.read()
-
-def rerank_results(query: str, results: List[dict], limit: int = 5) -> List[dict]:
-    """Rerank results using Cohere's rerank endpoint."""
-    if not results:
-        return []
-    
-    # Extract texts for reranking
-    texts = [result["content"] for result in results]
-    
-    # Get reranked results from Cohere
-    reranked = co.rerank(
-        query=query,
-        documents=texts,
-        top_n=limit,
-        model="rerank-v3.5"
-    )
-    
-    # Create a mapping of original content to original result
-    content_to_result = {r["content"]: r for r in results}
-    
-    # Reorder results based on reranking
-    reranked_results = []
-    for hit in reranked:
-        original_result = content_to_result[hit.document["text"]]
-        reranked_results.append({
-            "content": hit.document["text"],
-            "metadata": original_result["metadata"],
-            "relevance_score": hit.relevance_score
-        })
-    
-    return reranked_results
+    loader = TextLoader(file_path)
+    return "\n\n".join([doc.page_content for doc in loader.load()])
 
 @app.post("/upload")
 async def upload_file(file: UploadFile):
     """Upload and process a document."""
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-    
-    # Check file extension
-    allowed_extensions = {'.pdf', '.docx', '.txt'}
-    file_ext = os.path.splitext(file.filename)[1].lower()
-    if file_ext not in allowed_extensions:
-        raise HTTPException(status_code=400, detail="File type not supported")
-    
-    # Save file temporarily
-    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-        shutil.copyfileobj(file.file, temp_file)
-        temp_path = temp_file.name
-    
+    # Create temporary file
+    temp_path = ""
     try:
-        # Extract text based on file type
-        if file_ext == '.pdf':
-            text = extract_text_from_pdf(temp_path)
-        elif file_ext == '.docx':
-            text = extract_text_from_docx(temp_path)
-        else:  # .txt
-            text = extract_text_from_txt(temp_path)
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_path = temp_file.name
+            content = await file.read()
+            temp_file.write(content)
         
-        # Create text splitter
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
-            length_function=len,
-        )
+        # Extract text based on file type
+        if file.filename.lower().endswith('.pdf'):
+            text = extract_text_from_pdf(temp_path)
+        elif file.filename.lower().endswith('.docx'):
+            text = extract_text_from_docx(temp_path)
+        elif file.filename.lower().endswith('.txt'):
+            text = extract_text_from_txt(temp_path)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file type: {file.filename}"
+            )
         
         # Split text into chunks
-        chunks = text_splitter.split_text(text)
-        
-        # Add documents to vector store with metadata
-        texts_with_metadata = [
-            {"text": chunk, "metadata": {"filename": file.filename, "chunk_index": i}}
-            for i, chunk in enumerate(chunks)
-        ]
-        vector_store.add_texts(
-            texts=[d["text"] for d in texts_with_metadata],
-            metadatas=[d["metadata"] for d in texts_with_metadata]
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=settings.CHUNK_SIZE,
+            chunk_overlap=settings.CHUNK_OVERLAP
+        )
+        texts = text_splitter.create_documents(
+            [text],
+            metadatas=[{"filename": file.filename}]
         )
         
+        # Add to vector store
+        vector_store.add_documents(texts)
+        
         # Save the original file
-        file_path = os.path.join(UPLOAD_DIR, file.filename)
-        os.rename(temp_path, file_path)
+        file_path = os.path.join(settings.UPLOAD_DIR, file.filename)
+        shutil.move(temp_path, file_path)
         
         return {"message": "File processed successfully", "filename": file.filename}
     
@@ -155,20 +117,41 @@ async def upload_file(file: UploadFile):
             os.unlink(temp_path)
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/search")
+async def search_documents(query: str, limit: int = settings.DEFAULT_SEARCH_LIMIT):
+    """Search for documents using semantic search with Cohere reranking."""
+    try:
+        # Get reranked results using the compression retriever
+        docs = compression_retriever.invoke(query)
+        
+        # Format results
+        results = [
+            {
+                "content": doc.page_content,
+                "metadata": doc.metadata,
+                "relevance_score": 1.0  # Score not provided by retriever
+            }
+            for doc in docs[:limit]
+        ]
+        
+        return results
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.delete("/document/{filename}")
 async def delete_document(filename: str):
     """Delete a document and its vectors from the database."""
-    file_path = os.path.join(UPLOAD_DIR, filename)
+    file_path = os.path.join(settings.UPLOAD_DIR, filename)
     
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
     
     try:
-        # Get the table
-        table = vector_store.get_table()
-        
-        # Delete vectors from LanceDB using SQL filter
-        table.delete(f"metadata->>'filename' = '{filename}'")
+        # Delete vectors from LanceDB using the correct filter syntax
+        vector_store.delete(
+            filter=f"metadata['filename'] = '{filename}'"  # Using the correct filter syntax
+        )
         
         # Delete the file
         os.remove(file_path)
@@ -178,34 +161,6 @@ async def delete_document(filename: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/search")
-async def search_documents(query: str, limit: int = 5):
-    """Search for documents using semantic search with Cohere reranking."""
-    try:
-        # First, get more results than needed for reranking
-        results = vector_store.similarity_search_with_relevance_scores(
-            query=query,
-            k=min(limit * 3, 20)  # Get more results for reranking
-        )
-        
-        # Format initial results
-        initial_results = [
-            {
-                "content": doc.page_content,
-                "metadata": doc.metadata,
-                "relevance_score": score
-            }
-            for doc, score in results
-        ]
-        
-        # Rerank results using Cohere
-        reranked_results = rerank_results(query, initial_results, limit)
-        
-        return reranked_results
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=settings.HOST, port=settings.PORT)

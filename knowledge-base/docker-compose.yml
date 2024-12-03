@@ -8,8 +8,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./uploads:/app/uploads
-      - ./lancedb:/app/lancedb
+      - ./uploads:/app/uploads:rw
+      - ./lancedb:/app/lancedb:rw
     environment:
       - COHERE_API_KEY=${COHERE_API_KEY}
     healthcheck:
@@ -17,14 +17,15 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
 
   test:
     build:
       context: .
       dockerfile: Dockerfile.test
     volumes:
-      - ./uploads:/app/uploads
-      - ./lancedb:/app/lancedb
+      - ./uploads:/app/uploads:rw
+      - ./lancedb:/app/lancedb:rw
     environment:
       - COHERE_API_KEY=${COHERE_API_KEY}
     depends_on:

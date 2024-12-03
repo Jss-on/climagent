@@ -20,8 +20,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ app/
 COPY uploads/ uploads/
 
-# Create necessary directories
-RUN mkdir -p uploads lancedb
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/uploads /app/lancedb && \
+    chmod 777 /app/uploads /app/lancedb
 
 # Set environment variables
 ENV PYTHONPATH=/app
