@@ -10,6 +10,7 @@ This guide explains how to contribute to the Climate project, from setting up yo
 - [Pull Request Process](#pull-request-process)
 - [CI/CD Pipeline](#cicd-pipeline)
 - [Release Process](#release-process)
+- [Knowledge Base Service](#knowledge-base-service)
 
 ## Development Setup
 
@@ -254,6 +255,51 @@ b. Fix the issue and update version:
    ```
 
 c. Create PR to prod branch
+
+## Knowledge Base Service
+
+### Development Setup
+
+1. Install dependencies:
+```bash
+cd knowledge-base
+pip install -r requirements.txt
+```
+
+2. Set up environment variables:
+Create a `.env` file in the knowledge-base directory:
+```bash
+COHERE_API_KEY=your_cohere_api_key_here
+```
+
+3. Run tests:
+```bash
+pytest tests/ -v
+```
+
+### Docker Development
+
+1. Build and run the service:
+```bash
+cd knowledge-base
+docker-compose up app
+```
+
+2. Run tests in Docker:
+```bash
+docker-compose up test
+```
+
+### CI/CD Pipeline
+
+The knowledge base service uses GitHub Actions for CI/CD:
+
+1. **Testing**: All PRs and pushes trigger test runs
+2. **Docker Build**: Successful merges to main/develop trigger Docker image builds
+3. **Required Secrets**:
+   - `COHERE_API_KEY`: For running tests
+   - `DOCKERHUB_USERNAME`: For Docker image pushes
+   - `DOCKERHUB_TOKEN`: For Docker Hub authentication
 
 ## Additional Resources
 
