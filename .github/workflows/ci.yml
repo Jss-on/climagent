@@ -8,6 +8,7 @@ on:
       - 'feature/**'
       - 'release/**'
       - 'hotfix/**'
+      - 'fix/**'
   pull_request:
     branches: 
       - prod
@@ -93,8 +94,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: web-frontend/package-lock.json
       
       - name: Install frontend dependencies
         working-directory: web-frontend

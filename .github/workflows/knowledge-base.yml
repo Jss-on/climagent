@@ -36,6 +36,7 @@ jobs:
     - name: Run tests
       env:
         COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+        PYTHONPATH: ${{ github.workspace }}/knowledge-base
       run: |
         pytest tests/ -v
 
