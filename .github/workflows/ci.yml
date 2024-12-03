@@ -1,0 +1,234 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: 
+      - prod
+      - alpha
+      - 'feature/**'
+      - 'release/**'
+      - 'hotfix/**'
+  pull_request:
+    branches: 
+      - prod
+      - alpha
+
+env:
+  DOCKER_REPOSITORY: tensordt/climagent
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.bump_version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up version management
+        run: chmod +x ./scripts/version.sh
+      
+      - name: Determine version bump type
+        id: bump_type
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/prod" ]]; then
+            echo "type=patch" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/alpha" ]]; then
+            echo "type=minor" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" =~ ^refs/heads/release/ ]]; then
+            echo "type=minor" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" =~ ^refs/heads/hotfix/ ]]; then
+            echo "type=patch" >> $GITHUB_OUTPUT
+          else
+            echo "type=none" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Bump version
+        if: steps.bump_type.outputs.type != 'none'
+        id: bump_version
+        run: |
+          new_version=$(./scripts/version.sh bump ${{ steps.bump_type.outputs.type }} ${GITHUB_REF#refs/heads/})
+          echo "version=$new_version" >> $GITHUB_OUTPUT
+          
+          # Update changelog
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            ./scripts/version.sh changelog $new_version "$(git log -1 --pretty=%B)"
+          fi
+      
+      - name: Create Git tag
+        if: steps.bump_type.outputs.type != 'none' && github.event_name == 'push'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add version.txt CHANGELOG.md
+          git commit -m "Bump version to ${{ steps.bump_version.outputs.version }}"
+          git tag -a "v${{ steps.bump_version.outputs.version }}" -m "Version ${{ steps.bump_version.outputs.version }}"
+          git push origin "v${{ steps.bump_version.outputs.version }}"
+          git push
+
+  branch-protection:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check branch protection
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "Running on PR - branch protection active"
+            if [[ "${{ github.base_ref }}" == "prod" && "${{ github.head_ref }}" != "alpha"* && "${{ github.head_ref }}" != "hotfix/"* ]]; then
+              echo "ERROR: Only alpha and hotfix branches can be merged into prod"
+              exit 1
+            fi
+          fi
+
+  lint:
+    needs: branch-protection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      # Frontend Linting
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: web-frontend/package-lock.json
+      
+      - name: Install frontend dependencies
+        working-directory: web-frontend
+        run: npm ci
+      
+      - name: Run ESLint
+        working-directory: web-frontend
+        run: npm run lint
+      
+      # Backend Linting
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+          pip install -r requirements.txt
+      
+      - name: Run flake8
+        working-directory: backend
+        run: flake8 . --max-line-length=120
+
+  build:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./web-frontend
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.DOCKER_REPOSITORY }}-frontend:${{ github.sha }}
+            ${{ env.DOCKER_REPOSITORY }}-frontend:latest
+            ${{ env.DOCKER_REPOSITORY }}-frontend:${{ needs.version.outputs.new_version }}
+      
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.DOCKER_REPOSITORY }}-backend:${{ github.sha }}
+            ${{ env.DOCKER_REPOSITORY }}-backend:latest
+            ${{ env.DOCKER_REPOSITORY }}-backend:${{ needs.version.outputs.new_version }}
+
+  unit-tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      # Frontend Tests
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: web-frontend/package-lock.json
+      
+      - name: Install frontend dependencies
+        working-directory: web-frontend
+        run: npm ci
+      
+      - name: Run frontend tests
+        working-directory: web-frontend
+        run: npm test -- --coverage
+      
+      # Backend Tests
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      
+      - name: Run backend tests
+        working-directory: backend
+        run: pytest --cov=. --cov-report=xml
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./backend/coverage.xml,./web-frontend/coverage/coverage-final.json
+
+      - name: Save build info
+        if: success()
+        run: |
+          echo "${{ github.sha }}" > build-info.txt
+          
+      - name: Upload build info
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-info
+          path: build-info.txt
+          retention-days: 1
+
+  # Integration tests will be added later
+  # integration-tests:
+  #   needs: unit-tests
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+      
+  #     - name: Set up Docker Compose
+  #       run: docker-compose up -d
+      
+  #     - name: Wait for services to be ready
+  #       run: sleep 30
+      
+  #     - name: Run integration tests
+  #       run: docker-compose run frontend-test npm run test:integration
+      
+  #     - name: Cleanup
+  #       run: docker-compose down

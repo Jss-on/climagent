@@ -1,0 +1,125 @@
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+    branches:
+      - prod
+      - alpha
+      - 'release/**'
+  pull_request:
+    types: [closed]
+    branches:
+      - prod
+
+env:
+  DOCKER_REPOSITORY: tensordt/climagent
+
+jobs:
+  prepare-deploy:
+    if: |
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch != 'prod') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'prod')
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+      sha: ${{ steps.set-sha.outputs.sha }}
+    steps:
+      - name: Download artifact
+        if: github.event_name == 'workflow_run'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.payload.workflow_run.id,
+            });
+            const matchArtifact = artifacts.data.artifacts.find((artifact) => {
+              return artifact.name == "build-info"
+            });
+            const download = await github.rest.actions.downloadArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: matchArtifact.id,
+              archive_format: 'zip',
+            });
+            fs.writeFileSync('build-info.zip', Buffer.from(download.data));
+
+      - name: Set SHA
+        id: set-sha
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            echo "sha=$(cat build-info.txt)" >> $GITHUB_OUTPUT
+          else
+            echo "sha=${{ github.event.pull_request.head.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set environment
+        id: set-env
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" && "${{ github.event.pull_request.base.ref }}" == "prod" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/alpha" || "${{ github.ref }}" == refs/heads/release/* ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          fi
+
+  deploy-staging:
+    needs: prepare-deploy
+    if: needs.prepare-deploy.outputs.environment == 'staging'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Deploy to staging
+        run: |
+          echo "Pulling latest images"
+          VERSION=$(./scripts/version.sh get)
+          docker pull ${{ env.DOCKER_REPOSITORY }}-frontend:${VERSION}
+          docker pull ${{ env.DOCKER_REPOSITORY }}-backend:${VERSION}
+          
+          echo "Deploying version ${VERSION} to staging environment"
+          # Add your staging deployment commands here
+          # Example:
+          # docker-compose -f docker-compose.staging.yml up -d
+
+  deploy-production:
+    needs: prepare-deploy
+    if: |
+      needs.prepare-deploy.outputs.environment == 'production' && 
+      github.event_name == 'pull_request' && 
+      github.event.pull_request.merged == true && 
+      github.event.pull_request.base.ref == 'prod'
+    runs-on: ubuntu-latest
+    environment: 
+      name: production
+      url: https://your-production-url.com
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Deploy to production
+        run: |
+          echo "Pulling production images"
+          VERSION=$(./scripts/version.sh get)
+          docker pull ${{ env.DOCKER_REPOSITORY }}-frontend:${VERSION}
+          docker pull ${{ env.DOCKER_REPOSITORY }}-backend:${VERSION}
+          
+          echo "Deploying version ${VERSION} to production environment"
+          # Add your production deployment commands here
+          # Example:
+          # docker-compose -f docker-compose.prod.yml up -d
