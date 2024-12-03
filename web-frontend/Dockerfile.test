@@ -1,0 +1,16 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files and configuration files
+COPY package*.json .babelrc jest.config.js jest.setup.js ./
+COPY __mocks__ ./__mocks__
+
+# Install dependencies
+RUN npm install
+
+# Copy source and test files
+COPY src/ ./src/
+
+# Run tests
+CMD ["npm", "test"]

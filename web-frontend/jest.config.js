@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
@@ -9,4 +9,11 @@ module.exports = {
   transform: {
     '^.+\\.js$': 'babel-jest',
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(@testing-library)/)'
+  ],
+  moduleFileExtensions: ['js', 'json', 'jsx', 'node'],
+  testEnvironmentOptions: {
+    url: 'http://localhost'
+  }
 };

@@ -500,5 +500,8 @@ function isValidCoordinate(latitude, longitude) {
     return latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
 }
 
+// Export functions for testing
+export { isValidCoordinate, getWeatherDescription };
+
 // Initialize the map when the page loads
 window.onload = initMap;

@@ -2,35 +2,46 @@ import '@testing-library/jest-dom';
 
 // Mock OpenLayers
 global.ol = {
-  Map: jest.fn(),
-  View: jest.fn(),
+  Map: () => ({
+    setTarget: () => {},
+    addLayer: () => {},
+    addControl: () => {},
+  }),
+  View: () => ({
+    setCenter: () => {},
+    setZoom: () => {},
+  }),
   layer: {
-    Tile: jest.fn(),
-    Vector: jest.fn(),
+    Tile: () => ({
+      setSource: () => {},
+    }),
+    Vector: () => ({
+      setSource: () => {},
+    }),
   },
   source: {
-    OSM: jest.fn(),
-    Vector: jest.fn(),
-    XYZ: jest.fn(),
+    OSM: () => ({}),
+    Vector: () => ({}),
+    XYZ: () => ({}),
   },
   proj: {
-    fromLonLat: jest.fn(),
+    fromLonLat: (coords) => coords,
   },
   control: {
-    Zoom: jest.fn(),
-    ScaleLine: jest.fn(),
-    FullScreen: jest.fn(),
-    ZoomSlider: jest.fn(),
-    LayerSwitcher: jest.fn(),
+    Zoom: () => ({}),
+    ScaleLine: () => ({}),
+    FullScreen: () => ({}),
+    ZoomSlider: () => ({}),
+    LayerSwitcher: () => ({}),
   },
-  Feature: jest.fn(),
+  Feature: () => ({}),
   geom: {
-    Point: jest.fn(),
+    Point: () => ({}),
   },
   style: {
-    Style: jest.fn(),
-    Circle: jest.fn(),
-    Fill: jest.fn(),
-    Stroke: jest.fn(),
+    Style: () => ({}),
+    Circle: () => ({}),
+    Fill: () => ({}),
+    Stroke: () => ({}),
   },
 };

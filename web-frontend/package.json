@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "Climate web frontend application",
   "main": "src/map.js",
+  "type": "module",
   "scripts": {
-    "test": "jest",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
     "test:watch": "jest --watch"
   },
   "devDependencies": {
