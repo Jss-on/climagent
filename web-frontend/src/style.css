@@ -342,7 +342,22 @@ body {
         opacity: 1;
     }
 }
-
+.ol-zoomslider {
+    position: absolute !important;
+    right: 25px !important;
+    bottom: 140px !important;
+    left: unset !important;
+    top: unset !important;
+    background-color: white !important;
+    border: 2px solid #FF3D9A !important;
+    height: 150px !important;
+    width: 25px !important;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0px 4px;
+}
 .gps-button {
     position: absolute;
     bottom: 20px;
@@ -351,7 +366,7 @@ body {
     height: 40px;
     border-radius: 50%;
     background-color: white;
-    border: 2px solid #4CAF50;
+    border: 2px solid #FF3D9A;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -362,7 +377,7 @@ body {
 }
 
 .gps-button:hover {
-    background-color: #4CAF50;
+    background-color: #FF3D9A;
     transform: translateY(-2px);
 }
 
@@ -377,7 +392,7 @@ body {
 }
 
 .gps-button.active {
-    background-color: #4CAF50;
+    background-color: #FF3D9A;
 }
 
 .gps-button.active img {
@@ -397,8 +412,8 @@ body {
 .ol-zoom .ol-zoom-in,
 .ol-zoom .ol-zoom-out {
     background-color: white !important;
-    border: 2px solid #4CAF50 !important;
-    color: #4CAF50 !important;
+    border: 2px solid #FF3D9A !important;
+    color: #FF3D9A !important;
     margin: 1px !important;
     transition: all 0.3s ease !important;
     width: 25px !important;
@@ -406,30 +421,15 @@ body {
 
 .ol-zoom .ol-zoom-in:hover,
 .ol-zoom .ol-zoom-out:hover {
-    background-color: #4CAF50 !important;
+    background-color: #FF3D9A !important;
     color: white !important;
     transform: translateY(-1px);
 }
 
-.ol-zoomslider {
-    position: absolute !important;
-    right: 25px !important;
-    bottom: 140px !important;
-    left: unset !important;
-    top: unset !important;
-    background-color: white !important;
-    border: 2px solid #4CAF50 !important;
-    height: 150px !important;
-    width: 25px !important;
-    border-radius: 4px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0px 4px;
-}
+
 
 .ol-zoomslider button {
-    background-color: #4CAF50 !important;
+    background-color: #FF3D9A !important;
     width: 19px !important;
     height: 10px !important;
     border-radius: 2px;
@@ -438,7 +438,7 @@ body {
 }
 
 .ol-zoomslider button:hover {
-    background-color: #45a049 !important;
+    background-color: #FF3D9A !important;
     transform: scale(1.1);
 }
 

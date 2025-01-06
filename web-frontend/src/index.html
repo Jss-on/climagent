@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#ffffff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>Klima Mapa</title>
+    <title>Mapa dow Panahon</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap" rel="stylesheet">
@@ -14,44 +14,55 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol-layerswitcher@4.1.1/dist/ol-layerswitcher.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-    <div id="map" class="map h-screen w-full"></div>
-    <button id="gps-button" class="gps-button absolute top-4 left-4 bg-gray-200 hover:bg-gray-300 rounded-full p-2" title="Your location">
-        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' width='24'%3E%3Cpath d='M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z'/%3E%3C/svg%3E" alt="GPS">
-    </button>
-    <div class="weather-controls flex flex-wrap justify-center items-center gap-4 mt-4">
-        <div class="toggle-container flex items-center gap-2">
-            <input type="checkbox" id="temperature-toggle" class="weather-toggle">
-            <label for="temperature-toggle" class="weather-label text-sm">Temperature</label>
+<body class="font-poppins">
+    <div id="map" class="map">
+        <div class="ol-control ol-unselectable ol-zoom">
+            <button class="ol-zoom-in" title="Zoom in">+</button>
+            <button class="ol-zoom-out" title="Zoom out">−</button>
         </div>
-        <div class="toggle-container flex items-center gap-2">
-            <input type="checkbox" id="rainfall-toggle" class="weather-toggle">
-            <label for="rainfall-toggle" class="weather-label text-sm">Rainfall</label>
+        
+        <div class="ol-control ol-unselectable ol-scale-line">
+            <div class="ol-scale-line-inner"></div>
         </div>
-        <div class="toggle-container flex items-center gap-2">
-            <input type="checkbox" id="humidity-toggle" class="weather-toggle">
-            <label for="humidity-toggle" class="weather-label text-sm">Humidity</label>
+        
+        <div class="ol-control ol-unselectable ol-full-screen">
+            <button class="ol-full-screen-false" title="Toggle full-screen">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+            </button>
+        </div>
+        
+        <div class="ol-control ol-unselectable ol-zoomslider">
+            <button class="ol-zoomslider-thumb" title="Drag to zoom"></button>
         </div>
     </div>
-    <div class="weather-info mt-4 p-4 bg-gray-100 rounded-lg shadow-md">
-        <div class="weather-header-container flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold">Weather Information</h3>
-            <div class="toggle-container flex items-center gap-2">
-                <input type="checkbox" id="forecast-toggle" class="weather-toggle">
-                <label for="forecast-toggle" class="weather-label text-sm">Forecast</label>
+
+    <button id="gps-button" class="gps-button" title="Your location">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' width='24'%3E%3Cpath d='M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z'/%3E%3C/svg%3E" alt="GPS">
+    </button>
+
+    <div class="weather-info fixed bottom-4 left-4 p-4 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg max-w-sm">
+        <h3 class="text-lg font-semibold text-[#FF3D9A]">Weather Information</h3>
+        <div class="flex justify-between items-center mb-4">
+            <div class="weather-data-item">
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" id="forecast-toggle" class="weather-toggle">
+                    <span class="weather-label">Forecast</span>
+                </label>
             </div>
         </div>
-        <div id="weather-data" class="text-sm">
+        <div id="weather-data" class="text-sm text-gray-700">
             Click anywhere on the map to see weather information
         </div>
     </div>
+
     <script type="importmap">
     {
-      "imports": {
+        "imports": {
         "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
-      }
+        }
     }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
