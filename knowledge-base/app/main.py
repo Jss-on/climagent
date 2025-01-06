@@ -1,5 +1,8 @@
-from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi import FastAPI, UploadFile, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
 import os
 from typing import List
 import tempfile
@@ -14,6 +17,9 @@ from langchain_community.document_loaders import PyPDFLoader, TextLoader, Docx2t
 
 # Initialize FastAPI app
 app = FastAPI(title=settings.APP_TITLE, version="0.1.1")
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Configure CORS
 app.add_middleware(
@@ -53,6 +59,49 @@ compression_retriever = ContextualCompressionRetriever(
     base_compressor=reranker,
     base_retriever=retriever
 )
+
+class SettingsUpdate(BaseModel):
+    chunkSize: int
+    chunkOverlap: int
+
+@app.get("/")
+async def read_root():
+    return FileResponse("app/static/index.html")
+
+@app.get("/api/chunks")
+async def get_chunks():
+    try:
+        # Get all documents from the vector store
+        results = vector_store.similarity_search(
+            query="",
+            k=100  # Adjust this number based on your needs
+        )
+        
+        chunks = []
+        for doc in results:
+            chunks.append({
+                "document": doc.metadata.get("source", "Unknown"),
+                "text": doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content,
+                "size": len(doc.page_content)
+            })
+        
+        return chunks
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/settings")
+async def update_settings(settings_update: SettingsUpdate):
+    try:
+        # Update the settings
+        settings.CHUNK_SIZE = settings_update.chunkSize
+        settings.CHUNK_OVERLAP = settings_update.chunkOverlap
+        return {"message": "Settings updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/upload")
+async def upload_document(file: UploadFile):
+    return await upload_file(file)
 
 def extract_text_from_pdf(file_path: str) -> str:
     """Extract text from PDF file."""

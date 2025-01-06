@@ -1,3 +1,5 @@
+import { createApp } from 'vue';
+
 let map;
 let vectorSource;
 let vectorLayer;
@@ -500,8 +502,8 @@ function isValidCoordinate(latitude, longitude) {
     return latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
 }
 
-// Export functions for testing
-export { isValidCoordinate, getWeatherDescription };
+// Functions available for testing if needed
+// export { isValidCoordinate, getWeatherDescription };
 
 // Initialize the map when the page loads
 window.onload = initMap;
