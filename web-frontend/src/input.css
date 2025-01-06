@@ -2,13 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply m-0 p-0 font-poppins overflow-x-hidden;
+  }
+}
+
 @layer components {
   .map {
     @apply w-full h-screen relative;
   }
   
+  /* Navigation and Controls */
+  .layer-switcher {
+    @apply fixed top-4 left-0 right-0 flex justify-center gap-2 px-4 z-[1000];
+  }
+
+  .layer-switcher button {
+    @apply flex-1 max-w-[100px] px-4 py-2 rounded-full border-none bg-white text-[#FF3D9A] text-sm font-medium shadow-md transition-all duration-300;
+  }
+
+  .layer-switcher button.active {
+    @apply bg-[#FF3D9A] text-white;
+  }
+  
   .gps-button {
-    @apply fixed bottom-[calc(50vh+30px)] right-4 w-11 h-11 bg-white/90 backdrop-blur-sm rounded-xl p-2 shadow-lg cursor-pointer hover:bg-[#FF3D9A] hover:text-white focus:outline-none transition-all duration-300;
+    @apply fixed bottom-[calc(50vh+30px)] right-4 w-11 h-11 bg-white/90 backdrop-blur-sm rounded-xl p-2 shadow-lg cursor-pointer hover:bg-[#FF3D9A] hover:text-white focus:outline-none transition-all duration-300 z-[1000] flex items-center justify-center;
   }
 
   .gps-button img {
@@ -19,7 +38,32 @@
     @apply filter brightness-0 invert;
   }
 
-  /* Override OpenLayers default styles */
+  /* Weather Information Panel */
+  .weather-info {
+    @apply fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm rounded-t-[20px] p-4 md:p-6 max-h-[60vh] overflow-y-auto shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-[1000];
+  }
+
+  .weather-header {
+    @apply mb-4;
+  }
+
+  .weather-header h3 {
+    @apply text-base md:text-lg text-gray-800 m-0 mb-1;
+  }
+
+  .coordinates, .elevation {
+    @apply text-sm text-gray-600 my-0.5;
+  }
+
+  .weather-body {
+    @apply grid grid-cols-1 gap-2.5;
+  }
+
+  .weather-item {
+    @apply bg-white rounded-xl p-4 shadow-sm;
+  }
+
+  /* OpenLayers Controls Override */
   :global(.ol-control) {
     @apply !bg-transparent !p-0 !rounded-none;
   }
@@ -57,28 +101,7 @@
     @apply !hidden;
   }
 
-  /* Weather Info Styles */
-  .weather-info {
-    @apply fixed top-20 left-4 p-6 bg-white rounded-2xl shadow-lg w-80;
-  }
-
-  .weather-info h3 {
-    @apply text-[#937AFF] text-xl font-semibold mb-4;
-  }
-
-  .weather-data-item {
-    @apply flex flex-col gap-1 mb-4;
-  }
-
-  .weather-data-label {
-    @apply text-sm text-[#5627FF] font-medium;
-  }
-
-  .weather-data-value {
-    @apply text-base text-[#937AFF];
-  }
-
-  /* OpenLayers Controls */
+  /* OpenLayers Controls Positioning */
   .ol-control {
     @apply absolute bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-1.5 transition-all duration-300;
   }
@@ -112,9 +135,26 @@
     @apply w-8 h-8 m-0 p-0 text-center text-[#FF3D9A] bg-white border-none rounded-lg cursor-pointer hover:bg-[#FF3D9A] hover:text-white transition-all duration-300 flex items-center justify-center focus:outline-none;
   }
 
-  
+  /* Weather Data Specific Styles */
+  .weather-data-item {
+    @apply flex flex-col gap-1 mb-4;
+  }
 
+  .weather-data-label {
+    @apply text-sm text-[#5627FF] font-medium;
+  }
 
+  .weather-data-value {
+    @apply text-base text-[#937AFF];
+  }
+
+  .weather-info strong {
+    @apply text-black;
+  }
+
+  .weather-info hr {
+    @apply border-gray-200;
+  }
 
   /* Weather Icons */
   .weather-icon {
@@ -135,5 +175,12 @@
 
   .feels-like-icon::before {
     content: "🌡";
+  }
+
+  /* Responsive Adjustments */
+  @screen md {
+    .weather-info {
+      @apply max-w-md mx-auto;
+    }
   }
 }
