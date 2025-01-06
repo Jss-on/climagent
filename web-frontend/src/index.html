@@ -4,9 +4,182 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Klima Mapa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol-layerswitcher@4.1.1/dist/ol-layerswitcher.css">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .weather-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 10px 0;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .toggle-slider {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            background-color: #ccc;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-slider[data-active="true"] {
+            background-color: #2196F3;
+        }
+
+        .slider-button {
+            position: absolute;
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-slider[data-active="true"] .slider-button {
+            transform: translateX(20px);
+        }
+
+        .toggle-label {
+            font-size: 14px;
+            user-select: none;
+        }
+
+        .forecast-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            height: 300px;
+        }
+
+        .forecast-days {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background: white;
+            cursor: pointer;
+        }
+
+        .forecast-days:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .forecast-params {
+            min-width: 200px;
+            max-height: 150px;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background: white;
+            cursor: pointer;
+        }
+
+        .forecast-params option {
+            padding: 5px;
+        }
+
+        .forecast-params:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .weather-header {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .location-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .location-info .weather-value {
+            margin-bottom: 8px;
+        }
+
+        .forecast-toggle-container {
+            padding-left: 20px;
+        }
+
+        .forecast-controls {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .toggle-container:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .weather-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .weather-header-container h3 {
+            margin: 0;
+            font-size: 1.2em;
+            color: #fff;
+        }
+
+        #forecast-toggle-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 20px;
+            transition: background-color 0.3s;
+        }
+
+        #forecast-toggle-container:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .toggle-label {
+            color: #fff;
+            font-size: 0.9em;
+        }
+    </style>
 </head>
 <body>
     <div id="map" class="map"></div>
@@ -14,7 +187,15 @@
         <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' width='24'%3E%3Cpath d='M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z'/%3E%3C/svg%3E" alt="GPS">
     </button>
     <div id="weather-info" class="weather-info">
-        <h3>Weather Information</h3>
+        <div class="weather-header-container">
+            <h3>Weather Information</h3>
+            <div class="toggle-container" id="forecast-toggle-container">
+                <div class="toggle-slider" id="forecast-toggle" data-active="false">
+                    <div class="slider-button"></div>
+                </div>
+                <span class="toggle-label">Forecast</span>
+            </div>
+        </div>
         <div id="weather-data">
             Click anywhere on the map to see weather information
         </div>

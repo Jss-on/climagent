@@ -8,6 +8,28 @@ let markerLayer;
 let gpsActive = false;
 let watchId = null;
 
+const HOURLY_PARAMETERS = {
+    temperature_2m: { label: 'Temperature', unit: '°C', color: '#5627FF' },
+    relative_humidity_2m: { label: 'Relative Humidity', unit: '%', color: '#36A2EB' },
+    dew_point_2m: { label: 'Dew Point', unit: '°C', color: '#4BC0C0' },
+    apparent_temperature: { label: 'Feels Like', unit: '°C', color: '#FF9F40' },
+    precipitation: { label: 'Precipitation', unit: 'mm', color: '#FF3D9A' },
+    rain: { label: 'Rain', unit: 'mm', color: '#36A2EB' },
+    snowfall: { label: 'Snowfall', unit: 'cm', color: '#FFFFFF' },
+    snow_depth: { label: 'Snow Depth', unit: 'm', color: '#C9CBCF' },
+    cloud_cover: { label: 'Cloud Cover', unit: '%', color: '#937AFF' },
+    cloud_cover_low: { label: 'Low Clouds', unit: '%', color: '#FF9F40' },
+    cloud_cover_mid: { label: 'Mid Clouds', unit: '%', color: '#FF6384' },
+    cloud_cover_high: { label: 'High Clouds', unit: '%', color: '#9966FF' },
+    wind_speed_10m: { label: 'Wind Speed', unit: 'km/h', color: '#F8DB46' },
+    wind_direction_10m: { label: 'Wind Direction', unit: '°', color: '#4BC0C0' },
+    wind_gusts_10m: { label: 'Wind Gusts', unit: 'km/h', color: '#FF9F40' },
+    soil_temperature_0cm: { label: 'Soil Temp (Surface)', unit: '°C', color: '#FF6384' },
+    soil_temperature_6cm: { label: 'Soil Temp (6cm)', unit: '°C', color: '#36A2EB' },
+    soil_moisture_0_to_1cm: { label: 'Soil Moisture (0-1cm)', unit: 'm³/m³', color: '#4BC0C0' },
+    visibility: { label: 'Visibility', unit: 'm', color: '#FF9F40' }
+};
+
 function createBaseLayers() {
     const osmLayer = new ol.layer.Tile({
         title: 'Street Map',
@@ -115,7 +137,7 @@ function initMap() {
     // Add layer switcher control
     const layerSwitcher = document.createElement('div');
     layerSwitcher.className = 'layer-switcher ol-unselectable ol-control';
-    const mapTypes = ['Streets', 'Satellite', 'Terrain'];
+    const mapTypes = ['Streets', 'Sat', 'Terrain'];
     
     mapTypes.forEach((type, index) => {
         const button = document.createElement('button');
@@ -261,12 +283,12 @@ function stopGPSTracking() {
 
 async function fetchWeatherData(latitude, longitude) {
     try {
-        // Validate latitude and longitude
         if (!isValidCoordinate(latitude, longitude)) {
             throw new Error('Invalid coordinates');
         }
 
-        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,wind_direction_10m,apparent_temperature,is_day,weather_code,cloud_cover,wind_gusts_10m&timezone=auto`;
+        const hourlyParams = Object.keys(HOURLY_PARAMETERS).join(',');
+        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,wind_direction_10m,apparent_temperature,is_day,weather_code,cloud_cover,wind_gusts_10m&hourly=${hourlyParams}&timezone=auto&forecast_days=16`;
         
         const response = await fetch(apiUrl);
         if (!response.ok) {
@@ -400,22 +422,60 @@ function displayWeatherData(data, elevation, latitude, longitude) {
     const weatherInfo = document.getElementById('weather-data');
     const current = data.current;
     const weatherDescription = getWeatherDescription(current.weather_code);
+    const forecastToggle = document.getElementById('forecast-toggle');
+    const showForecast = forecastToggle?.getAttribute('data-active') === 'true';
+    const selectedDays = document.getElementById('forecast-days')?.value || 7;
+    const selectedParams = document.getElementById('forecast-params')?.value?.split(',') || ['temperature_2m', 'precipitation'];
+
+    // Create forecast chart data
+    const hoursToShow = selectedDays * 24;
+    const forecastData = {
+        labels: data.hourly.time.slice(0, hoursToShow).map(time => {
+            const date = new Date(time);
+            return `${date.getDate()}/${date.getMonth() + 1} ${date.getHours()}h`;
+        }),
+        datasets: selectedParams.map(param => ({
+            label: `${HOURLY_PARAMETERS[param].label} (${HOURLY_PARAMETERS[param].unit})`,
+            data: data.hourly[param].slice(0, hoursToShow),
+            borderColor: HOURLY_PARAMETERS[param].color,
+            yAxisID: param,
+            tension: 0.4
+        }))
+    };
 
     weatherInfo.innerHTML = `
         <div class="weather-card">
-            <div class="weather-header" style="display: flex; justify-content: center; align-items: center;">
-                <div style="display: flex; flex-direction: column; align-items: center;">
-                    <strong>📍 Coordinates</strong>
-                    <div class="weather-value" style="text-align: center;">
-                        ${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°
-                    </div>
-                    <strong>🏔️ Elevation</strong>
-                    <div class="weather-value" style="text-align: center;">
-                        ${elevation !== undefined ? elevation.toFixed(0) : 'N/A'} meters
+            <div class="weather-header" style="display: ${showForecast ? 'none' : 'block'}">
+                <div class="header-content">
+                    <div class="location-info">
+                        <strong>📍 Coordinates</strong>
+                        <div class="weather-value">
+                            ${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°
+                        </div>
+                        <strong>🏔️ Elevation</strong>
+                        <div class="weather-value">
+                            ${elevation !== undefined ? elevation.toFixed(0) : 'N/A'} meters
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="weather-body">
+            <div class="forecast-controls" style="display: ${showForecast ? 'flex' : 'none'}">
+                <select id="forecast-days" class="forecast-days">
+                    <option value="1">1 Day</option>
+                    <option value="3">3 Days</option>
+                    <option value="7" selected>7 Days</option>
+                    <option value="14">14 Days</option>
+                    <option value="16">16 Days</option>
+                </select>
+                <select id="forecast-params" class="forecast-params" multiple>
+                    ${Object.entries(HOURLY_PARAMETERS).map(([value, { label }]) => `
+                        <option value="${value}" ${selectedParams.includes(value) ? 'selected' : ''}>
+                            ${label}
+                        </option>
+                    `).join('')}
+                </select>
+            </div>
+            <div class="weather-body" style="display: ${showForecast ? 'none' : 'block'}">
                 <div class="weather-item">
                     <strong>🌡️ Temperature</strong>
                     <div class="weather-value">${current.temperature_2m}°C</div>
@@ -443,9 +503,79 @@ function displayWeatherData(data, elevation, latitude, longitude) {
                     <div class="weather-value">${current.wind_direction_10m}°</div>
                 </div>
             </div>
+            <div id="forecast-container" class="forecast-container" style="display: ${showForecast ? 'block' : 'none'}">
+                <canvas id="forecast-chart"></canvas>
+            </div>
         </div>
     `;
-    
+
+    // Initialize controls
+    const forecastDays = document.getElementById('forecast-days');
+    const forecastParams = document.getElementById('forecast-params');
+    const forecastContainer = document.getElementById('forecast-container');
+    const forecastControls = document.querySelector('.forecast-controls');
+    const weatherHeader = document.querySelector('.weather-header');
+    const weatherBody = document.querySelector('.weather-body');
+
+    // Re-add event listener for forecast toggle
+    if (forecastToggle) {
+        // Remove any existing listeners
+        const newForecastToggle = forecastToggle.cloneNode(true);
+        forecastToggle.parentNode.replaceChild(newForecastToggle, forecastToggle);
+        
+        newForecastToggle.addEventListener('click', () => {
+            const isActive = newForecastToggle.getAttribute('data-active') === 'true';
+            const newState = !isActive;
+            newForecastToggle.setAttribute('data-active', newState);
+            
+            // Get the weather info container
+            const weatherInfoContainer = document.querySelector('.weather-info');
+            
+            if (weatherHeader) weatherHeader.style.display = newState ? 'none' : 'block';
+            if (weatherBody) weatherBody.style.display = newState ? 'none' : 'block';
+            if (forecastContainer) forecastContainer.style.display = newState ? 'block' : 'none';
+            if (forecastControls) forecastControls.style.display = newState ? 'flex' : 'none';
+            
+            // Toggle the forecast mode class for enlarged display
+            if (weatherInfoContainer) {
+                if (newState) {
+                    weatherInfoContainer.classList.add('forecast-mode');
+                    initForecastChart(forecastData);
+                } else {
+                    weatherInfoContainer.classList.remove('forecast-mode');
+                }
+            }
+        });
+    }
+    forecastDays.addEventListener('change', updateChart);
+    forecastParams.addEventListener('change', updateChart);
+
+    function updateChart() {
+        const newDays = parseInt(forecastDays.value);
+        const newParams = Array.from(forecastParams.selectedOptions).map(option => option.value);
+        const newHours = newDays * 24;
+        
+        const newForecastData = {
+            labels: data.hourly.time.slice(0, newHours).map(time => {
+                const date = new Date(time);
+                return `${date.getDate()}/${date.getMonth() + 1} ${date.getHours()}h`;
+            }),
+            datasets: newParams.map(param => ({
+                label: `${HOURLY_PARAMETERS[param].label} (${HOURLY_PARAMETERS[param].unit})`,
+                data: data.hourly[param].slice(0, newHours),
+                borderColor: HOURLY_PARAMETERS[param].color,
+                yAxisID: param,
+                tension: 0.4
+            }))
+        };
+        
+        initForecastChart(newForecastData);
+    }
+
+    if (showForecast) {
+        initForecastChart(forecastData);
+    }
+
     let isDragging = false;
     let currentX;
     let currentY;
@@ -498,12 +628,102 @@ function displayWeatherData(data, elevation, latitude, longitude) {
     setTimeout(initDraggable, 100); // Small delay to ensure DOM is ready
 }
 
+function initForecastChart(data) {
+    const ctx = document.getElementById('forecast-chart').getContext('2d');
+    
+    if (window.forecastChart) {
+        window.forecastChart.destroy();
+    }
+
+    const scales = {};
+    data.datasets.forEach((dataset, index) => {
+        scales[dataset.yAxisID] = {
+            type: 'linear',
+            display: true,
+            position: index % 2 === 0 ? 'left' : 'right',
+            title: {
+                display: true,
+                text: dataset.label,
+                font: {
+                    size: 14,
+                    weight: 'bold'
+                }
+            },
+            grid: {
+                drawOnChartArea: index === 0,
+                color: 'rgba(0,0,0,0.1)'
+            },
+            ticks: {
+                font: {
+                    size: 12
+                }
+            }
+        };
+    });
+
+    window.forecastChart = new Chart(ctx, {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 13
+                        },
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#5627FF',
+                    bodyColor: '#937AFF',
+                    borderColor: '#F8DB46',
+                    borderWidth: 1,
+                    padding: 12,
+                    bodyFont: {
+                        size: 13
+                    },
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    }
+                }
+            },
+            scales: scales
+        }
+    });
+}
+
+function updateForecastChart(data, days, params) {
+    const hoursToShow = days * 24;
+    const forecastData = {
+        labels: data.hourly.time.slice(0, hoursToShow).map(time => {
+            const date = new Date(time);
+            return `${date.getDate()}/${date.getMonth() + 1} ${date.getHours()}h`;
+        }),
+        datasets: params.map(param => ({
+            label: `${HOURLY_PARAMETERS[param].label} (${HOURLY_PARAMETERS[param].unit})`,
+            data: data.hourly[param].slice(0, hoursToShow),
+            borderColor: HOURLY_PARAMETERS[param].color,
+            yAxisID: param,
+            tension: 0.4
+        }))
+    };
+
+    initForecastChart(forecastData);
+}
+
 function isValidCoordinate(latitude, longitude) {
     return latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
 }
-
-// Functions available for testing if needed
-// export { isValidCoordinate, getWeatherDescription };
 
 // Initialize the map when the page loads
 window.onload = initMap;
