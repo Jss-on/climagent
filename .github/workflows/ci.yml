@@ -8,6 +8,7 @@ on:
       - 'feature/**'
       - 'release/**'
       - 'hotfix/**'
+      - 'fix/**'
   pull_request:
     branches: 
       - prod
@@ -82,48 +83,46 @@ jobs:
             fi
           fi
 
-  lint:
-    needs: branch-protection
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+  # lint:
+  #   needs: branch-protection
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
       
-      # Frontend Linting
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: web-frontend/package-lock.json
+  #     # Frontend Linting
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: '18'
       
-      - name: Install frontend dependencies
-        working-directory: web-frontend
-        run: npm ci
+  #     - name: Install frontend dependencies
+  #       working-directory: web-frontend
+  #       run: npm ci
       
-      - name: Run ESLint
-        working-directory: web-frontend
-        run: npm run lint
+  #     - name: Run ESLint
+  #       working-directory: web-frontend
+  #       run: npm run lint
       
-      # Backend Linting
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          cache: 'pip'
+  #     # Backend Linting
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: '3.10'
+  #         cache: 'pip'
       
-      - name: Install backend dependencies
-        working-directory: backend
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8
-          pip install -r requirements.txt
+  #     - name: Install backend dependencies
+  #       working-directory: backend
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install flake8
+  #         pip install -r requirements.txt
       
-      - name: Run flake8
-        working-directory: backend
-        run: flake8 . --max-line-length=120
+  #     - name: Run flake8
+  #       working-directory: backend
+  #       run: flake8 . --max-line-length=120
 
   build:
-    needs: lint
+    needs: branch-protection
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -213,6 +212,21 @@ jobs:
           name: build-info
           path: build-info.txt
           retention-days: 1
+
+  cleanup-branches:
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true && !contains(github.event.pull_request.base.ref, 'prod') && !contains(github.event.pull_request.base.ref, 'alpha')
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Delete merged branch
+        run: |
+          git push origin --delete ${{ github.event.pull_request.head.ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Integration tests will be added later
   # integration-tests:

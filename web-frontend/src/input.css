@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply m-0 p-0 font-poppins overflow-x-hidden;
+  }
+}
+
+@layer components {
+  .map {
+    @apply w-full h-screen relative;
+  }
+  
+  /* Navigation and Controls */
+  .layer-switcher {
+    @apply fixed top-4 left-0 right-0 flex justify-center gap-2 px-4 z-[1000];
+  }
+
+  .layer-switcher button {
+    @apply flex-1 max-w-[100px] px-4 py-2 rounded-full border-none bg-white text-[#FF3D9A] text-sm font-medium shadow-md transition-all duration-300;
+  }
+
+  .layer-switcher button.active {
+    @apply bg-[#FF3D9A] text-white;
+  }
+  
+  .gps-button {
+    @apply fixed bottom-[calc(50vh+30px)] right-4 w-11 h-11 bg-white/90 backdrop-blur-sm rounded-xl p-2 shadow-lg cursor-pointer hover:bg-[#FF3D9A] hover:text-white focus:outline-none transition-all duration-300 z-[1000] flex items-center justify-center;
+  }
+
+  .gps-button img {
+    @apply transition-colors duration-300;
+  }
+
+  .gps-button:hover img {
+    @apply filter brightness-0 invert;
+  }
+
+  /* Weather Information Panel */
+
+  .weather-header {
+    @apply mb-4;
+  }
+
+  .weather-header h3 {
+    @apply text-base md:text-lg text-gray-800 m-0 mb-1;
+  }
+
+  .coordinates, .elevation {
+    @apply text-sm text-gray-600 my-0.5;
+  }
+
+  .weather-body {
+    @apply grid grid-cols-1 gap-2.5;
+  }
+
+  .weather-item {
+    @apply bg-white rounded-xl p-4 shadow-sm;
+  }
+
+  /* OpenLayers Controls Override */
+  :global(.ol-control) {
+    @apply !bg-transparent !p-0 !rounded-none;
+  }
+
+  :global(.ol-control button) {
+    @apply !bg-white/90 !text-[#FF3D9A] hover:!bg-[#FF3D9A] hover:!text-white !border-[#FF3D9A] !border;
+  }
+
+  :global(.ol-zoom) {
+    @apply !bg-transparent;
+  }
+
+  :global(.ol-zoom-in),
+  :global(.ol-zoom-out) {
+    @apply !w-8 !h-8 !leading-8 !text-lg !font-medium !rounded-lg !m-1;
+  }
+
+  :global(.ol-zoom-in) {
+    @apply !mb-1;
+  }
+
+  :global(.ol-zoom-out) {
+    @apply !mt-1;
+  }
+
+  :global(.ol-scale-line) {
+    @apply !bg-[#FF3D9A]/50 !backdrop-blur-sm !rounded-lg !border-none;
+  }
+
+  :global(.ol-scale-line-inner) {
+    @apply !border-t-0 !border-white !text-white !text-xs !leading-4 !text-center !whitespace-nowrap !px-2;
+  }
+
+  :global(.ol-attribution) {
+    @apply !hidden;
+  }
+
+  /* OpenLayers Controls Positioning */
+  .ol-control {
+    @apply absolute bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-1.5 transition-all duration-300;
+  }
+
+  .ol-unselectable {
+    @apply select-none;
+  }
+
+  .ol-zoom {
+    @apply top-4 right-4 flex flex-col gap-1;
+  }
+
+  .ol-zoom-in,
+  .ol-zoom-out {
+    @apply w-8 h-8 m-0 p-0 text-center text-[#FF3D9A] bg-white border-none rounded-lg cursor-pointer hover:bg-[#FF3D9A] hover:text-white transition-all duration-300 font-medium text-lg focus:outline-none;
+  }
+
+  .ol-scale-line {
+    @apply bottom-20 left-4 p-1 bg-[#FF3D9A]/50 backdrop-blur-sm rounded-lg;
+  }
+
+  .ol-scale-line-inner {
+    @apply border border-white border-t-0 text-white text-xs leading-4 text-center whitespace-nowrap px-2;
+  }
+
+  .ol-full-screen {
+    @apply top-4 left-4;
+  }
+
+  .ol-full-screen button {
+    @apply w-8 h-8 m-0 p-0 text-center text-[#FF3D9A] bg-white border-none rounded-lg cursor-pointer hover:bg-[#FF3D9A] hover:text-white transition-all duration-300 flex items-center justify-center focus:outline-none;
+  }
+
+  /* Weather Data Specific Styles */
+  .weather-data-item {
+    @apply flex flex-col gap-1 mb-4;
+  }
+
+  .weather-data-label {
+    @apply text-sm text-[#5627FF] font-medium;
+  }
+
+  .weather-data-value {
+    @apply text-base text-[#937AFF];
+  }
+
+  
+
+  
+
+  /* Weather Icons */
+  .weather-icon {
+    @apply w-5 h-5 text-[#937AFF];
+  }
+
+  .coordinates-icon::before {
+    content: "📍";
+  }
+
+  .elevation-icon::before {
+    content: "🏔";
+  }
+
+  .temperature-icon::before {
+    content: "🌡";
+  }
+
+  .feels-like-icon::before {
+    content: "🌡";
+  }
+
+  /* Responsive Adjustments */
+  @screen md {
+    
+  }
+}

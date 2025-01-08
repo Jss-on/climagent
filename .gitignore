@@ -1,1 +1,7 @@
 rust-backend/target
+
+# Knowledge Base
+knowledge-base/.env
+knowledge-base/uploads/
+knowledge-base/lancedb/
+knowledge-base/venv/

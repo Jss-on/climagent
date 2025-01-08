@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Base</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="bg-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-between h-16">
+                    <div class="flex">
+                        <div class="flex-shrink-0 flex items-center">
+                            <h1 class="text-xl font-bold text-gray-800">Knowledge Base</h1>
+                        </div>
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            <a @click="currentView = 'documents'" 
+                               :class="['inline-flex items-center px-1 pt-1 border-b-2', currentView === 'documents' ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700']"
+                               href="#">Documents</a>
+                            <a @click="currentView = 'settings'"
+                               :class="['inline-flex items-center px-1 pt-1 border-b-2', currentView === 'settings' ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700']"
+                               href="#">Settings</a>
+                            <a @click="currentView = 'chunks'"
+                               :class="['inline-flex items-center px-1 pt-1 border-b-2', currentView === 'chunks' ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700']"
+                               href="#">Chunks</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <!-- Documents View -->
+            <div v-if="currentView === 'documents'" class="px-4 py-5 sm:p-6">
+                <div class="bg-white shadow sm:rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Add Documents</h3>
+                        <div class="mt-5">
+                            <div class="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                                <div class="space-y-1 text-center">
+                                    <i class="fas fa-cloud-upload-alt text-gray-400 text-3xl"></i>
+                                    <div class="flex text-sm text-gray-600">
+                                        <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500">
+                                            <span>Upload a file</span>
+                                            <input id="file-upload" name="file-upload" type="file" class="sr-only" @change="handleFileUpload">
+                                        </label>
+                                        <p class="pl-1">or drag and drop</p>
+                                    </div>
+                                    <p class="text-xs text-gray-500">PDF, DOC, DOCX, TXT up to 10MB</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div v-if="currentView === 'settings'" class="px-4 py-5 sm:p-6">
+                <div class="bg-white shadow sm:rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Text Splitting Configuration</h3>
+                        <div class="mt-5 space-y-4">
+                            <div>
+                                <label for="chunk-size" class="block text-sm font-medium text-gray-700">Chunk Size</label>
+                                <input type="number" id="chunk-size" v-model="settings.chunkSize" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="chunk-overlap" class="block text-sm font-medium text-gray-700">Chunk Overlap</label>
+                                <input type="number" id="chunk-overlap" v-model="settings.chunkOverlap" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <button @click="saveSettings" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chunks View -->
+            <div v-if="currentView === 'chunks'" class="px-4 py-5 sm:p-6">
+                <div class="bg-white shadow sm:rounded-lg overflow-hidden">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Document Chunks</h3>
+                        <div class="flex flex-col">
+                            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chunk</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            <tr v-for="chunk in chunks" :key="chunk.id">
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ chunk.document }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ chunk.text }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ chunk.size }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="static/main.js"></script>
+</body>
+</html>
