@@ -43,8 +43,16 @@
         <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' width='24'%3E%3Cpath d='M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z'/%3E%3C/svg%3E" alt="GPS">
     </button>
 
-    <div class="weather-info fixed bottom-4 left-4 md:left-6 p-4 md:p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg w-[90vw] max-w-sm md:max-w-md transition-all duration-300 ease-in-out hover:bg-white/95">
-        <h3 class="text-lg md:text-xl font-semibold text-[#FF3D9A] mb-3">Weather Information</h3>
+    <div class="weather-info fixed bottom-4 left-4 md:left-6 p-4 md:p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg transition-all duration-300 ease-in-out hover:bg-white/95 max-h-[60vh] overflow-y-auto z-[1000]">
+        <div class="flex justify-between items-start relative mb-3">
+            <h3 class="text-lg md:text-xl font-semibold text-[#FF3D9A]">Weather Information</h3>
+            <button id="toggle-weather-panel" class="absolute -top-1 -right-1 p-1.5 hover:bg-gray-100/50 rounded-lg transition-colors duration-200 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-gray-500">
+                    <path id="minimize-icon" d="M11.47 7.72a.75.75 0 011.06 0l7.5 7.5a.75.75 0 11-1.06 1.06L12 9.31l-6.97 6.97a.75.75 0 01-1.06-1.06l7.5-7.5z" class="block"/>
+                    <path id="maximize-icon" d="M12.53 16.28a.75.75 0 01-1.06 0l-7.5-7.5a.75.75 0 011.06-1.06L12 14.69l6.97-6.97a.75.75 0 111.06 1.06l-7.5 7.5z" class="hidden"/>
+                </svg>
+            </button>
+        </div>
         <div class="flex justify-between items-center mb-4">
             <div class="weather-data-item">
                 <label class="flex items-center gap-2 cursor-pointer group">

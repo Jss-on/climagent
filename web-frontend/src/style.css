@@ -444,22 +444,6 @@ body {
 
 /* Mobile Responsive Styles */
 @media screen and (max-width: 768px) {
-    .weather-info {
-        position: fixed;
-        top: auto;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
-        max-height: 60vh;
-        transform: none;
-        overflow-y: auto;
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px 20px 0 0;
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-        padding: 15px;
-        z-index: 1000;
-    }
 
     .weather-body {
         grid-template-columns: 1fr;
@@ -484,9 +468,7 @@ body {
         padding: 8px 15px;
     }
 
-    .weather-info {
-        padding: 20px 15px;
-    }
+    
 
     .forecast-controls {
         padding: 10px 0;
@@ -678,54 +660,23 @@ body {
     }
 }
 
-.weather-info:active {
-    cursor: grabbing;
-}
 
-.weather-info:hover {
-    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
-}
 
-.weather-info::-webkit-scrollbar {
-    width: 8px;
-}
 
-.weather-info::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
 
-.weather-info::-webkit-scrollbar-thumb {
-    background: #937AFF;
-    border-radius: 4px;
-}
 
-.weather-info::-webkit-scrollbar-thumb:hover {
-    background: #5627FF;
-}
 
-.weather-info p {
-    margin: 8px 0;
-    color: #333;
-}
 
-.weather-info strong {
-    color: #000;
-}
 
-.weather-info hr {
-    border: none;
-    border-top: 1px solid #eee;
-    margin: 12px 0;
-}
 
-.weather-info h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 1.2em;
-    color: #5627FF;
-    cursor: move;
-}
+
+
+
+
+
+
+
+
 
 #weather-data {
     font-size: 14px;

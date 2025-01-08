@@ -725,5 +725,35 @@ function isValidCoordinate(latitude, longitude) {
     return latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
 }
 
+// Weather panel minimize/maximize functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const weatherPanel = document.querySelector('.weather-info');
+    const toggleButton = document.getElementById('toggle-weather-panel');
+    const minimizeIcon = document.getElementById('minimize-icon');
+    const maximizeIcon = document.getElementById('maximize-icon');
+    const weatherData = document.getElementById('weather-data');
+    const forecastToggle = document.querySelector('.weather-data-item');
+
+    toggleButton.addEventListener('click', function() {
+        if (weatherData.style.display === 'none') {
+            // Maximize
+            weatherData.style.display = 'block';
+            forecastToggle.style.display = 'block';
+            minimizeIcon.classList.remove('hidden');
+            maximizeIcon.classList.add('hidden');
+            weatherPanel.classList.remove('h-[60px]');
+            weatherPanel.classList.add('max-h-[60vh]');
+        } else {
+            // Minimize
+            weatherData.style.display = 'none';
+            forecastToggle.style.display = 'none';
+            minimizeIcon.classList.add('hidden');
+            maximizeIcon.classList.remove('hidden');
+            weatherPanel.classList.remove('max-h-[60vh]');
+            weatherPanel.classList.add('h-[60px]');
+        }
+    });
+});
+
 // Initialize the map when the page loads
 window.onload = initMap;
